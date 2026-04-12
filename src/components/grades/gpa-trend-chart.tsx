@@ -3,6 +3,7 @@
 import {
   LineChart,
   Line,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -10,6 +11,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { chartTheme } from "@/lib/chart-theme";
 import type { TermGpa } from "@/lib/gpa";
 
 interface GpaTrendChartProps {
@@ -44,26 +46,46 @@ export function GpaTrendChart({ termGpas }: GpaTrendChartProps) {
               data={termGpas}
               margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
             >
-              <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+              <defs>
+                <linearGradient id="gpaGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop
+                    offset="0%"
+                    stopColor="hsl(var(--primary))"
+                    stopOpacity={0.3}
+                  />
+                  <stop
+                    offset="100%"
+                    stopColor="hsl(var(--primary))"
+                    stopOpacity={0}
+                  />
+                </linearGradient>
+              </defs>
+              <CartesianGrid
+                stroke={chartTheme.grid.stroke}
+                strokeDasharray={chartTheme.grid.strokeDasharray}
+              />
               <XAxis
                 dataKey="label"
-                tick={{ fontSize: 12 }}
-                className="fill-muted-foreground"
+                tick={{ fontSize: chartTheme.axis.fontSize, fill: chartTheme.axis.fill }}
+                tickLine={chartTheme.axis.tickLine}
+                axisLine={chartTheme.axis.axisLine}
               />
               <YAxis
                 reversed
                 domain={[1.0, 3.5]}
-                tick={{ fontSize: 12 }}
-                className="fill-muted-foreground"
+                tick={{ fontSize: chartTheme.axis.fontSize, fill: chartTheme.axis.fill }}
+                tickLine={chartTheme.axis.tickLine}
+                axisLine={chartTheme.axis.axisLine}
               />
               <Tooltip
-                contentStyle={{
-                  backgroundColor: "hsl(var(--popover))",
-                  border: "1px solid hsl(var(--border))",
-                  borderRadius: "8px",
-                  color: "hsl(var(--popover-foreground))",
-                }}
+                contentStyle={chartTheme.tooltip.contentStyle}
                 formatter={(value) => [Number(value).toFixed(2), "GPA"]}
+              />
+              <Area
+                type="monotone"
+                dataKey="gpa"
+                fill="url(#gpaGradient)"
+                strokeWidth={0}
               />
               <Line
                 type="monotone"
@@ -72,6 +94,8 @@ export function GpaTrendChart({ termGpas }: GpaTrendChartProps) {
                 strokeWidth={2}
                 dot={{ r: 4, fill: "hsl(var(--primary))" }}
                 activeDot={{ r: 6 }}
+                animationDuration={1000}
+                animationEasing="ease-out"
               />
             </LineChart>
           </ResponsiveContainer>
