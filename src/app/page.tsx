@@ -5,6 +5,11 @@ import { ProgressRing } from "@/components/dashboard/progress-ring";
 import { GraduationCountdown } from "@/components/dashboard/graduation-countdown";
 import { AlertFeed } from "@/components/dashboard/alert-feed";
 import { CurrentCourses } from "@/components/dashboard/current-courses";
+import {
+  DashboardHeader,
+  DashboardGrid,
+  DashboardCard,
+} from "@/components/dashboard/dashboard-layout";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -59,25 +64,18 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground mt-1">
-          Your academic command center
-        </p>
-      </div>
+      <DashboardHeader />
 
-      {/* Top row: GPA, Progress, Graduation */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <GpaCard gpa={gpaResult} />
-        <ProgressRing unitsPassed={gpaResult.totalUnitsPassed} />
-        <GraduationCountdown unitsPassed={gpaResult.totalUnitsPassed} />
-      </div>
+      <DashboardGrid className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <DashboardCard><GpaCard gpa={gpaResult} /></DashboardCard>
+        <DashboardCard><ProgressRing unitsPassed={gpaResult.totalUnitsPassed} /></DashboardCard>
+        <DashboardCard><GraduationCountdown unitsPassed={gpaResult.totalUnitsPassed} /></DashboardCard>
+      </DashboardGrid>
 
-      {/* Bottom row: Alerts + Current Courses */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <AlertFeed alerts={sortedAlerts} />
-        <CurrentCourses enrollments={currentTerm} />
-      </div>
+      <DashboardGrid className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <DashboardCard><AlertFeed alerts={sortedAlerts} /></DashboardCard>
+        <DashboardCard><CurrentCourses enrollments={currentTerm} /></DashboardCard>
+      </DashboardGrid>
     </div>
   );
 }

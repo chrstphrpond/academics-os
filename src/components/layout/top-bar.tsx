@@ -11,10 +11,10 @@ export function TopBar() {
   const { theme, setTheme } = useTheme();
 
   return (
-    <header className="flex h-14 items-center gap-2 border-b px-4">
+    <header className="flex h-12 items-center gap-2 border-b border-border/50 bg-background/80 backdrop-blur-md px-4">
       <SidebarTrigger className="-ml-1" />
       <Separator orientation="vertical" className="mr-2 h-4" />
-      <span className="text-sm font-medium text-muted-foreground">
+      <span className="text-xs font-medium text-muted-foreground tracking-wide uppercase">
         Term 3 SY 2025-26
       </span>
       <div className="ml-auto flex items-center gap-1">

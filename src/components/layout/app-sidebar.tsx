@@ -37,10 +37,12 @@ export function AppSidebar() {
 
   return (
     <Sidebar>
-      <SidebarHeader className="border-b border-sidebar-border px-4 py-3">
-        <Link href="/" className="flex items-center gap-2">
-          <GraduationCap className="h-6 w-6 text-sidebar-primary" />
-          <span className="text-lg font-semibold">Academics OS</span>
+      <SidebarHeader className="border-b border-sidebar-border px-4 py-4">
+        <Link href="/" className="flex items-center gap-2.5">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 ring-1 ring-primary/20">
+            <GraduationCap className="h-4 w-4 text-primary" />
+          </div>
+          <span className="text-sm font-semibold tracking-tight">Academics OS</span>
         </Link>
       </SidebarHeader>
       <SidebarContent>
