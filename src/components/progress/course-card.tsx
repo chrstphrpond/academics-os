@@ -9,7 +9,7 @@ import {
   PopoverDescription,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Lock, ArrowRight } from "lucide-react";
+import { Lock, ArrowRight, CheckCircle, Clock, AlertTriangle, Circle, XCircle, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const statusStyles: Record<CourseStatus, string> = {
@@ -21,6 +21,17 @@ const statusStyles: Record<CourseStatus, string> = {
   failed: "bg-red-500/15 text-red-700 border-red-500/30 dark:text-red-400",
   drp: "bg-zinc-500/15 text-zinc-500 border-zinc-500/30",
   not_taken: "bg-muted text-muted-foreground border-border",
+};
+
+const statusIcons: Record<CourseStatus, typeof CheckCircle> = {
+  passed: CheckCircle,
+  in_progress: Clock,
+  available: Circle,
+  locked: Lock,
+  inc: AlertTriangle,
+  failed: XCircle,
+  drp: Minus,
+  not_taken: Circle,
 };
 
 const statusLabels: Record<CourseStatus, string> = {
@@ -38,14 +49,16 @@ export interface CourseCardData {
   code: string;
   title: string;
   units: number;
+  type: string;
   status: CourseStatus;
   grade?: string | null;
   prerequisites: string[];
   unlocks: string[];
 }
 
-export function CourseCard({ course }: { course: CourseCardData }) {
+export function CourseCard({ course, onSelect }: { course: CourseCardData; onSelect?: (course: CourseCardData) => void }) {
   const isLocked = course.status === "locked";
+  const StatusIcon = statusIcons[course.status];
 
   return (
     <Popover>
@@ -55,9 +68,16 @@ export function CourseCard({ course }: { course: CourseCardData }) {
           "hover:ring-1 hover:ring-ring/50 cursor-pointer",
           statusStyles[course.status]
         )}
+        onClick={(e) => {
+          if (onSelect) {
+            e.preventDefault();
+            onSelect(course);
+          }
+        }}
       >
         <div className="flex items-center justify-between gap-1">
-          <span className="font-mono font-semibold truncate">
+          <span className="flex items-center gap-1 font-mono font-semibold truncate">
+            <StatusIcon className="size-3 shrink-0" />
             {course.code}
           </span>
           <span className="shrink-0 tabular-nums">{course.units}u</span>

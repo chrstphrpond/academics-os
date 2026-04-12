@@ -1,4 +1,4 @@
-import { CourseCard } from "./course-card";
+import { CourseCard, type CourseCardData } from "./course-card";
 
 import type { CourseWithStatus } from "./types";
 
@@ -12,9 +12,10 @@ interface CurriculumGridProps {
   courses: CourseWithStatus[];
   /** Map from course code to array of codes it unlocks */
   unlocksMap: Record<string, string[]>;
+  onSelect?: (course: CourseCardData) => void;
 }
 
-export function CurriculumGrid({ courses, unlocksMap }: CurriculumGridProps) {
+export function CurriculumGrid({ courses, unlocksMap, onSelect }: CurriculumGridProps) {
   const years = [1, 2, 3, 4];
 
   return (
@@ -49,11 +50,13 @@ export function CurriculumGrid({ courses, unlocksMap }: CurriculumGridProps) {
                               code: course.code,
                               title: course.title,
                               units: course.units,
+                              type: course.type,
                               status: course.status,
                               grade: course.grade,
                               prerequisites: course.prerequisites,
                               unlocks: unlocksMap[course.code] ?? [],
                             }}
+                            onSelect={onSelect}
                           />
                         ))}
                       </div>

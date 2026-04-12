@@ -1,13 +1,12 @@
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
-import { CurriculumGrid } from "@/components/progress/curriculum-grid";
-import { UnitsSummary } from "@/components/progress/units-summary";
+import { ProgressContent } from "@/components/progress/progress-content";
 import { PageHeader } from "@/components/ui/animated";
 import { ProgressSkeleton } from "@/components/ui/skeleton-cards";
 import type { CourseStatus } from "@/lib/types";
 import type { CourseWithStatus } from "@/components/progress/types";
 
-async function ProgressContent() {
+async function ProgressData() {
   const supabase = await createClient();
 
   // Fetch all courses ordered by year then term
@@ -87,14 +86,7 @@ async function ProgressContent() {
   });
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
-      <CurriculumGrid courses={coursesWithStatus} unlocksMap={unlocksMap} />
-      <div className="order-first lg:order-last">
-        <div className="lg:sticky lg:top-20">
-          <UnitsSummary courses={coursesWithStatus} />
-        </div>
-      </div>
-    </div>
+    <ProgressContent courses={coursesWithStatus} unlocksMap={unlocksMap} />
   );
 }
 
@@ -107,7 +99,7 @@ export default function ProgressPage() {
       />
 
       <Suspense fallback={<ProgressSkeleton />}>
-        <ProgressContent />
+        <ProgressData />
       </Suspense>
     </div>
   );
