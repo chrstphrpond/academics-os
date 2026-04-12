@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronRight } from "lucide-react";
+import { StaggerList, StaggerItem } from "@/components/ui/animated";
 import { TaskCard, type TaskItem } from "./task-card";
 
 export function TaskList({ tasks }: { tasks: TaskItem[] }) {
@@ -19,9 +20,13 @@ export function TaskList({ tasks }: { tasks: TaskItem[] }) {
         </p>
       )}
 
-      {pending.map((task) => (
-        <TaskCard key={task.id} task={task} />
-      ))}
+      <StaggerList className="space-y-3">
+        {pending.map((task) => (
+          <StaggerItem key={task.id}>
+            <TaskCard task={task} />
+          </StaggerItem>
+        ))}
+      </StaggerList>
 
       {completed.length > 0 && (
         <div>

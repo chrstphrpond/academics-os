@@ -1,15 +1,14 @@
 import { ChatInterface } from "@/components/knowledge/chat-interface";
 import { CategoryGrid } from "@/components/knowledge/category-grid";
+import { PageHeader } from "@/components/ui/animated";
 
 export default function KnowledgePage() {
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold">Knowledge Base</h1>
-        <p className="text-muted-foreground mt-1">
-          Ask questions or browse FAQ categories
-        </p>
-      </div>
+      <PageHeader
+        title="Knowledge Base"
+        description="Ask questions or browse FAQ categories"
+      />
 
       <section>
         <h2 className="mb-3 text-lg font-semibold">AI Q&amp;A</h2>

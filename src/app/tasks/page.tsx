@@ -1,8 +1,11 @@
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { QuickAddTask } from "@/components/tasks/quick-add-task";
 import { TaskList } from "@/components/tasks/task-list";
+import { PageHeader } from "@/components/ui/animated";
+import { TasksSkeleton } from "@/components/ui/skeleton-cards";
 
-export default async function TasksPage() {
+async function TasksContent() {
   const supabase = await createClient();
 
   const { data: tasks } = await supabase
@@ -20,16 +23,24 @@ export default async function TasksPage() {
   }));
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Tasks</h1>
-        <p className="text-muted-foreground mt-1">
-          Manage your academic tasks and deadlines
-        </p>
-      </div>
-
+    <>
       <QuickAddTask />
       <TaskList tasks={taskItems} />
+    </>
+  );
+}
+
+export default function TasksPage() {
+  return (
+    <div className="mx-auto max-w-2xl space-y-6">
+      <PageHeader
+        title="Tasks"
+        description="Manage your academic tasks and deadlines"
+      />
+
+      <Suspense fallback={<TasksSkeleton />}>
+        <TasksContent />
+      </Suspense>
     </div>
   );
 }

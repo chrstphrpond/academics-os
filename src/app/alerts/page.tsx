@@ -1,10 +1,13 @@
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { refreshAlerts } from "@/actions/alerts";
 import { AlertList } from "@/components/alerts/alert-list";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
+import { PageHeader } from "@/components/ui/animated";
+import { AlertsSkeleton } from "@/components/ui/skeleton-cards";
 
-export default async function AlertsPage() {
+async function AlertsContent() {
   const supabase = await createClient();
 
   const severityOrder = ["critical", "warning", "info"];
@@ -20,15 +23,17 @@ export default async function AlertsPage() {
       severityOrder.indexOf(a.severity) - severityOrder.indexOf(b.severity)
   );
 
+  return <AlertList alerts={sortedAlerts} />;
+}
+
+export default function AlertsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Smart Alerts</h1>
-          <p className="text-muted-foreground mt-1">
-            Smart notifications about deadlines and grade changes
-          </p>
-        </div>
+        <PageHeader
+          title="Smart Alerts"
+          description="Smart notifications about deadlines and grade changes"
+        />
         <form action={refreshAlerts}>
           <Button variant="outline" size="sm" type="submit">
             <RefreshCw className="h-4 w-4 mr-2" />
@@ -37,7 +42,9 @@ export default async function AlertsPage() {
         </form>
       </div>
 
-      <AlertList alerts={sortedAlerts} />
+      <Suspense fallback={<AlertsSkeleton />}>
+        <AlertsContent />
+      </Suspense>
     </div>
   );
 }

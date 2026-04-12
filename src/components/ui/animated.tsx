@@ -124,6 +124,16 @@ export function InteractiveCard({
   );
 }
 
+// Page header with fade-in
+export function PageHeader({ title, description }: { title: string; description: string }) {
+  return (
+    <FadeIn>
+      <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{title}</h1>
+      <p className="text-muted-foreground mt-1 text-sm hidden sm:block">{description}</p>
+    </FadeIn>
+  );
+}
+
 // Pulse glow for critical items
 export function PulseGlow({
   className,

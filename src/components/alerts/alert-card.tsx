@@ -3,6 +3,7 @@
 import { AlertTriangle, AlertCircle, Info, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { InteractiveCard } from "@/components/ui/animated";
 import { dismissAlert } from "@/actions/alerts";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
@@ -51,6 +52,7 @@ export function AlertCard({ alert }: { alert: AlertItem }) {
   }
 
   return (
+    <InteractiveCard>
     <Card className={`${config.bg} border`}>
       <CardContent className="flex items-start gap-3 py-4">
         <Icon className={`h-5 w-5 mt-0.5 shrink-0 ${config.className}`} />
@@ -90,5 +92,6 @@ export function AlertCard({ alert }: { alert: AlertItem }) {
         </Button>
       </CardContent>
     </Card>
+    </InteractiveCard>
   );
 }

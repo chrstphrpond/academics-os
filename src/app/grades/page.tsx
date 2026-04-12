@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { calculateTermGpas, type EnrollmentWithCourse } from "@/lib/gpa";
 import { GpaTrendChart } from "@/components/grades/gpa-trend-chart";
@@ -13,8 +14,10 @@ import {
   GpaSimulator,
   type AvailableCourse,
 } from "@/components/grades/gpa-simulator";
+import { PageHeader } from "@/components/ui/animated";
+import { GradesSkeleton } from "@/components/ui/skeleton-cards";
 
-export default async function GradesPage() {
+async function GradesContent() {
   const supabase = await createClient();
 
   // Fetch all enrollments with course data
@@ -94,14 +97,7 @@ export default async function GradesPage() {
     .map((c) => ({ code: c.code, title: c.title, units: c.units }));
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Grade Analyzer</h1>
-        <p className="text-muted-foreground mt-1">
-          Analyze your grades, GPA trends, and simulate future outcomes
-        </p>
-      </div>
-
+    <>
       {/* Charts row */}
       <div className="grid gap-6 md:grid-cols-2">
         <GpaTrendChart termGpas={termGpas} />
@@ -119,6 +115,21 @@ export default async function GradesPage() {
           availableCourses={availableCourses}
         />
       </div>
+    </>
+  );
+}
+
+export default function GradesPage() {
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Grade Analyzer"
+        description="Analyze your grades, GPA trends, and simulate future outcomes"
+      />
+
+      <Suspense fallback={<GradesSkeleton />}>
+        <GradesContent />
+      </Suspense>
     </div>
   );
 }

@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
+import { StaggerList, StaggerItem, InteractiveCard } from "@/components/ui/animated";
 import {
   Rocket,
   ClipboardList,
@@ -34,20 +37,24 @@ const CATEGORIES = [
 
 export function CategoryGrid() {
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+    <StaggerList className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
       {CATEGORIES.map((cat) => {
         const Icon = cat.icon;
         return (
-          <Link key={cat.slug} href={`/knowledge/${cat.slug}`}>
-            <Card className="flex flex-col items-center gap-2 p-4 text-center transition-colors hover:bg-muted/50">
-              <div className="rounded-lg bg-primary/10 p-2">
-                <Icon className="size-5 text-primary" />
-              </div>
-              <span className="text-sm font-medium">{cat.name}</span>
-            </Card>
-          </Link>
+          <StaggerItem key={cat.slug}>
+            <InteractiveCard>
+              <Link href={`/knowledge/${cat.slug}`}>
+                <Card className="flex flex-col items-center gap-2 p-4 text-center transition-colors hover:bg-muted/50">
+                  <div className="rounded-lg bg-primary/10 p-2">
+                    <Icon className="size-5 text-primary" />
+                  </div>
+                  <span className="text-sm font-medium">{cat.name}</span>
+                </Card>
+              </Link>
+            </InteractiveCard>
+          </StaggerItem>
         );
       })}
-    </div>
+    </StaggerList>
   );
 }

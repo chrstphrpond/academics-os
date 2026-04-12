@@ -1,10 +1,13 @@
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { CurriculumGrid } from "@/components/progress/curriculum-grid";
 import { UnitsSummary } from "@/components/progress/units-summary";
+import { PageHeader } from "@/components/ui/animated";
+import { ProgressSkeleton } from "@/components/ui/skeleton-cards";
 import type { CourseStatus } from "@/lib/types";
 import type { CourseWithStatus } from "@/components/progress/types";
 
-export default async function ProgressPage() {
+async function ProgressContent() {
   const supabase = await createClient();
 
   // Fetch all courses ordered by year then term
@@ -84,22 +87,28 @@ export default async function ProgressPage() {
   });
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Progress Tracker</h1>
-        <p className="text-muted-foreground mt-1">
-          Track your 4-year curriculum progress across all courses
-        </p>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
-        <CurriculumGrid courses={coursesWithStatus} unlocksMap={unlocksMap} />
-        <div className="order-first lg:order-last">
-          <div className="lg:sticky lg:top-20">
-            <UnitsSummary courses={coursesWithStatus} />
-          </div>
+    <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
+      <CurriculumGrid courses={coursesWithStatus} unlocksMap={unlocksMap} />
+      <div className="order-first lg:order-last">
+        <div className="lg:sticky lg:top-20">
+          <UnitsSummary courses={coursesWithStatus} />
         </div>
       </div>
+    </div>
+  );
+}
+
+export default function ProgressPage() {
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Progress Tracker"
+        description="Track your 4-year curriculum progress across all courses"
+      />
+
+      <Suspense fallback={<ProgressSkeleton />}>
+        <ProgressContent />
+      </Suspense>
     </div>
   );
 }

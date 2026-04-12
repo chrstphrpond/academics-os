@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { StaggerList, StaggerItem } from "@/components/ui/animated";
 import { AlertCard, type AlertItem } from "./alert-card";
 
 const filters = ["all", "critical", "warning", "info"] as const;
@@ -47,11 +48,13 @@ export function AlertList({ alerts }: { alerts: AlertItem[] }) {
           No {filter === "all" ? "" : filter} alerts
         </p>
       ) : (
-        <div className="space-y-3">
+        <StaggerList className="space-y-3">
           {filtered.map((alert) => (
-            <AlertCard key={alert.id} alert={alert} />
+            <StaggerItem key={alert.id}>
+              <AlertCard alert={alert} />
+            </StaggerItem>
           ))}
-        </div>
+        </StaggerList>
       )}
     </div>
   );

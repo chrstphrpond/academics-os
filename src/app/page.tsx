@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { calculateGpa } from "@/lib/gpa";
 import { GpaCard } from "@/components/dashboard/gpa-card";
@@ -10,8 +11,9 @@ import {
   DashboardGrid,
   DashboardCard,
 } from "@/components/dashboard/dashboard-layout";
+import { DashboardSkeleton } from "@/components/ui/skeleton-cards";
 
-export default async function DashboardPage() {
+async function DashboardContent() {
   const supabase = await createClient();
 
   // Fetch all enrollments with course data
@@ -63,9 +65,7 @@ export default async function DashboardPage() {
   );
 
   return (
-    <div className="space-y-6">
-      <DashboardHeader />
-
+    <>
       <DashboardGrid className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <DashboardCard><GpaCard gpa={gpaResult} /></DashboardCard>
         <DashboardCard><ProgressRing unitsPassed={gpaResult.totalUnitsPassed} /></DashboardCard>
@@ -76,6 +76,18 @@ export default async function DashboardPage() {
         <DashboardCard><AlertFeed alerts={sortedAlerts} /></DashboardCard>
         <DashboardCard><CurrentCourses enrollments={currentTerm} /></DashboardCard>
       </DashboardGrid>
+    </>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <div className="space-y-6">
+      <DashboardHeader />
+
+      <Suspense fallback={<DashboardSkeleton />}>
+        <DashboardContent />
+      </Suspense>
     </div>
   );
 }

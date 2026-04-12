@@ -1,4 +1,5 @@
 "use client";
+import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TOTAL_UNITS_REQUIRED } from "@/lib/constants";
 
@@ -18,9 +19,14 @@ export function ProgressRing({ unitsPassed }: { unitsPassed: number }) {
         <div className="relative h-20 w-20">
           <svg className="h-20 w-20 -rotate-90" viewBox="0 0 100 100">
             <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="6" className="text-muted/20" />
-            <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="6"
-              strokeDasharray={circumference} strokeDashoffset={strokeDashoffset}
-              strokeLinecap="round" className="text-primary transition-all duration-1000 ease-out" />
+            <motion.circle
+              cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="6"
+              strokeDasharray={circumference}
+              initial={{ strokeDashoffset: circumference }}
+              animate={{ strokeDashoffset }}
+              transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: 0.3 }}
+              strokeLinecap="round" className="text-primary"
+            />
           </svg>
           <div className="absolute inset-0 flex items-center justify-center">
             <span className="text-sm font-semibold tabular-nums">{percentage}%</span>
