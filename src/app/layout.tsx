@@ -8,6 +8,7 @@ import { AppSidebar } from "@/components/layout/app-sidebar";
 import { TopBar } from "@/components/layout/top-bar";
 import { Toaster } from "@/components/ui/sonner";
 import { CommandPalette } from "@/components/layout/command-palette";
+import { BottomNav } from "@/components/layout/bottom-nav";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -38,12 +39,13 @@ export default function RootLayout({
               <AppSidebar />
               <SidebarInset>
                 <TopBar />
-                <main className="flex-1 overflow-auto p-6">{children}</main>
+                <main className="flex-1 overflow-auto p-6 pb-16 md:pb-0">{children}</main>
               </SidebarInset>
             </SidebarProvider>
           </TooltipProvider>
           <Toaster />
           <CommandPalette />
+          <BottomNav />
         </ThemeProvider>
       </body>
     </html>
