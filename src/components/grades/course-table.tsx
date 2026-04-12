@@ -26,31 +26,31 @@ interface CourseTableProps {
 function gradeBadgeClass(color: string): string {
   switch (color) {
     case "emerald":
-      return "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/25";
+      return "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
     case "blue":
-      return "bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/25";
+      return "bg-blue-500/10 text-blue-400 border-blue-500/20";
     case "amber":
-      return "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/25";
+      return "bg-amber-500/10 text-amber-400 border-amber-500/20";
     case "orange":
-      return "bg-orange-500/15 text-orange-700 dark:text-orange-400 border-orange-500/25";
+      return "bg-orange-500/10 text-orange-400 border-orange-500/20";
     case "red":
-      return "bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/25";
+      return "bg-red-500/10 text-red-400 border-red-500/20";
     default:
-      return "bg-zinc-500/15 text-zinc-700 dark:text-zinc-400 border-zinc-500/25";
+      return "bg-zinc-500/10 text-zinc-400 border-zinc-500/20";
   }
 }
 
 export function CourseTable({ courses }: CourseTableProps) {
   return (
-    <div className="rounded-lg border">
+    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden backdrop-blur-sm">
       <Table>
-        <TableHeader className="sticky top-0 bg-card z-10">
-          <TableRow>
-            <TableHead>Code</TableHead>
-            <TableHead>Title</TableHead>
-            <TableHead>Term</TableHead>
-            <TableHead className="text-center">Units</TableHead>
-            <TableHead className="text-center">Grade</TableHead>
+        <TableHeader className="sticky top-0 z-10">
+          <TableRow className="border-b border-white/[0.06] bg-white/[0.03] hover:bg-white/[0.03]">
+            <TableHead className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Code</TableHead>
+            <TableHead className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Title</TableHead>
+            <TableHead className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Term</TableHead>
+            <TableHead className="text-center text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Units</TableHead>
+            <TableHead className="text-center text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Grade</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -66,15 +66,18 @@ export function CourseTable({ courses }: CourseTableProps) {
                 ? getGradeColor(course.grade)
                 : "zinc";
               return (
-                <TableRow key={`${course.code}-${course.term}-${course.schoolYear}`} className="even:bg-muted/5">
-                  <TableCell className="font-mono text-xs font-medium">
+                <TableRow
+                  key={`${course.code}-${course.term}-${course.schoolYear}`}
+                  className="border-b border-white/[0.04] even:bg-white/[0.02] hover:bg-white/[0.04] transition-colors"
+                >
+                  <TableCell className="font-mono text-xs text-muted-foreground">
                     {course.code}
                   </TableCell>
-                  <TableCell>{course.title}</TableCell>
+                  <TableCell className="text-sm">{course.title}</TableCell>
                   <TableCell className="text-muted-foreground text-sm">
                     {course.term} {course.schoolYear}
                   </TableCell>
-                  <TableCell className="text-center">{course.units}</TableCell>
+                  <TableCell className="text-center tabular-nums">{course.units}</TableCell>
                   <TableCell className="text-center">
                     {course.grade ? (
                       <Badge

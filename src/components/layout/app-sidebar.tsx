@@ -60,6 +60,11 @@ export function AppSidebar() {
                   <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton
                       isActive={isActive}
+                      className={
+                        isActive
+                          ? "bg-white/[0.06] border-l-2 border-l-indigo-500 hover:bg-white/[0.08]"
+                          : "hover:bg-white/[0.04]"
+                      }
                       render={<Link href={item.href} />}
                     >
                       <item.icon className="h-4 w-4" />

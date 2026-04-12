@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Card } from "@/components/ui/card";
-import { StaggerList, StaggerItem, InteractiveCard } from "@/components/ui/animated";
+import { StaggerList, StaggerItem } from "@/components/ui/animated";
+import { motion } from "framer-motion";
 import {
   Rocket,
   ClipboardList,
@@ -42,16 +42,19 @@ export function CategoryGrid() {
         const Icon = cat.icon;
         return (
           <StaggerItem key={cat.slug}>
-            <InteractiveCard>
-              <Link href={`/knowledge/${cat.slug}`}>
-                <Card className="flex flex-col items-center gap-2 p-4 text-center transition-colors hover:bg-muted/50">
-                  <div className="rounded-lg bg-primary/10 p-2">
-                    <Icon className="size-5 text-primary" />
-                  </div>
-                  <span className="text-sm font-medium">{cat.name}</span>
-                </Card>
-              </Link>
-            </InteractiveCard>
+            <Link href={`/knowledge/${cat.slug}`}>
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.97 }}
+                transition={{ duration: 0.15 }}
+                className="flex flex-col items-center gap-2 p-4 text-center rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-white/[0.12] transition-colors cursor-pointer"
+              >
+                <div className="rounded-lg bg-primary/10 p-2">
+                  <Icon className="size-5 text-primary" />
+                </div>
+                <span className="text-sm font-medium">{cat.name}</span>
+              </motion.div>
+            </Link>
           </StaggerItem>
         );
       })}

@@ -11,16 +11,52 @@ import {
 } from "@/components/ui/popover";
 import { Lock, ArrowRight, CheckCircle, Clock, AlertTriangle, Circle, XCircle, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { InteractiveCard } from "@/components/ui/animated";
 
-const statusStyles: Record<CourseStatus, string> = {
-  passed: "bg-emerald-500/15 text-emerald-700 border-emerald-500/30 dark:text-emerald-400",
-  in_progress: "bg-blue-500/15 text-blue-700 border-blue-500/30 dark:text-blue-400",
-  available: "bg-amber-500/15 text-amber-700 border-amber-500/30 dark:text-amber-400",
-  locked: "bg-zinc-500/15 text-zinc-500 border-zinc-500/30",
-  inc: "bg-red-500/15 text-red-700 border-red-500/30 dark:text-red-400",
-  failed: "bg-red-500/15 text-red-700 border-red-500/30 dark:text-red-400",
-  drp: "bg-zinc-500/15 text-zinc-500 border-zinc-500/30",
-  not_taken: "bg-muted text-muted-foreground border-border",
+const statusStyles: Record<CourseStatus, { base: string; hover: string }> = {
+  passed: {
+    base: "border-l-2 border-l-emerald-500 border-y border-r border-y-white/[0.06] border-r-white/[0.06] bg-emerald-500/[0.03]",
+    hover: "hover:bg-emerald-500/[0.06] hover:shadow-[0_0_12px_rgba(16,185,129,0.1)]",
+  },
+  in_progress: {
+    base: "border-l-2 border-l-blue-500 border-y border-r border-y-white/[0.06] border-r-white/[0.06] bg-blue-500/[0.03]",
+    hover: "hover:bg-blue-500/[0.06] hover:shadow-[0_0_12px_rgba(59,130,246,0.1)]",
+  },
+  available: {
+    base: "border-l-2 border-l-amber-500 border-y border-r border-y-white/[0.06] border-r-white/[0.06] bg-amber-500/[0.03]",
+    hover: "hover:bg-amber-500/[0.06] hover:shadow-[0_0_12px_rgba(245,158,11,0.1)]",
+  },
+  locked: {
+    base: "border-l-2 border-l-white/10 border-y border-r border-y-white/[0.06] border-r-white/[0.06] bg-white/[0.01] opacity-50",
+    hover: "",
+  },
+  inc: {
+    base: "border-l-2 border-l-red-500 border-y border-r border-y-white/[0.06] border-r-white/[0.06] bg-red-500/[0.03]",
+    hover: "hover:bg-red-500/[0.06] hover:shadow-[0_0_12px_rgba(239,68,68,0.1)]",
+  },
+  failed: {
+    base: "border-l-2 border-l-red-500 border-y border-r border-y-white/[0.06] border-r-white/[0.06] bg-red-500/[0.03]",
+    hover: "hover:bg-red-500/[0.06] hover:shadow-[0_0_12px_rgba(239,68,68,0.1)]",
+  },
+  drp: {
+    base: "border-l-2 border-l-white/10 border-y border-r border-y-white/[0.06] border-r-white/[0.06] bg-white/[0.02]",
+    hover: "hover:bg-white/[0.04]",
+  },
+  not_taken: {
+    base: "border-l-2 border-l-white/10 border-y border-r border-y-white/[0.06] border-r-white/[0.06] bg-white/[0.02]",
+    hover: "hover:bg-white/[0.04]",
+  },
+};
+
+const statusTextColor: Record<CourseStatus, string> = {
+  passed: "text-emerald-400",
+  in_progress: "text-blue-400",
+  available: "text-amber-400",
+  locked: "text-zinc-500",
+  inc: "text-red-400",
+  failed: "text-red-400",
+  drp: "text-zinc-500",
+  not_taken: "text-muted-foreground",
 };
 
 const statusIcons: Record<CourseStatus, typeof CheckCircle> = {
@@ -59,14 +95,16 @@ export interface CourseCardData {
 export function CourseCard({ course, onSelect }: { course: CourseCardData; onSelect?: (course: CourseCardData) => void }) {
   const isLocked = course.status === "locked";
   const StatusIcon = statusIcons[course.status];
+  const styles = statusStyles[course.status];
 
   return (
+    <InteractiveCard>
     <Popover>
       <PopoverTrigger
         className={cn(
-          "w-full rounded-md border px-2.5 py-2 text-left text-xs transition-colors",
-          "hover:ring-1 hover:ring-ring/50 cursor-pointer",
-          statusStyles[course.status]
+          "w-full rounded-xl px-3 py-2.5 text-left text-xs transition-all duration-200 cursor-pointer backdrop-blur-sm",
+          styles.base,
+          styles.hover,
         )}
         onClick={(e) => {
           if (onSelect) {
@@ -75,17 +113,17 @@ export function CourseCard({ course, onSelect }: { course: CourseCardData; onSel
           }
         }}
       >
-        <div className="flex items-center justify-between gap-1">
-          <span className="flex items-center gap-1 font-mono font-semibold truncate">
-            <StatusIcon className="size-3 shrink-0" />
-            {course.code}
-          </span>
-          <span className="shrink-0 tabular-nums">{course.units}u</span>
-        </div>
-        <div className="mt-0.5 flex items-center gap-1 truncate text-[11px] opacity-80">
-          {isLocked && <Lock className="size-3 shrink-0" />}
-          <span className="truncate">{course.title}</span>
-        </div>
+          <div className="flex items-center justify-between gap-1">
+            <span className={cn("flex items-center gap-1.5 font-mono text-[10px] font-semibold uppercase tracking-wider truncate", statusTextColor[course.status])}>
+              <StatusIcon className="size-3.5 shrink-0" />
+              {course.code}
+            </span>
+            <span className="shrink-0 tabular-nums text-muted-foreground">{course.units}u</span>
+          </div>
+          <div className="mt-1 flex items-center gap-1 truncate text-[11px] text-muted-foreground/80">
+            {isLocked && <Lock className="size-3 shrink-0" />}
+            <span className="truncate">{course.title}</span>
+          </div>
       </PopoverTrigger>
 
       <PopoverContent side="top" className="w-64">
@@ -146,5 +184,6 @@ export function CourseCard({ course, onSelect }: { course: CourseCardData; onSel
         </div>
       </PopoverContent>
     </Popover>
+    </InteractiveCard>
   );
 }
