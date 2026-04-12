@@ -21,6 +21,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarFooter,
 } from "@/components/ui/sidebar";
 
 const navItems = [
@@ -63,6 +64,9 @@ export function AppSidebar() {
                     >
                       <item.icon className="h-4 w-4" />
                       <span>{item.title}</span>
+                      {item.title === "Alerts" && (
+                        <span className="ml-auto h-2 w-2 rounded-full bg-destructive" />
+                      )}
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 );
@@ -71,6 +75,12 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter className="border-t border-sidebar-border px-4 py-3">
+        <div className="text-xs text-muted-foreground">
+          <p className="font-medium text-sidebar-foreground text-sm">Christopher Pond</p>
+          <p>2024370558 · BSIT</p>
+        </div>
+      </SidebarFooter>
     </Sidebar>
   );
 }

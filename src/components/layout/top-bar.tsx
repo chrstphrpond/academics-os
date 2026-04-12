@@ -18,13 +18,13 @@ export function TopBar() {
         Term 3 SY 2025-26
       </span>
       <div className="ml-auto flex items-center gap-1">
-        <Button variant="ghost" size="icon" className="relative">
+        <Button variant="ghost" size="icon" className="relative" aria-label="View notifications">
           <Bell className="h-4 w-4" />
           <Badge className="absolute -right-1 -top-1 h-4 w-4 rounded-full p-0 text-[10px] flex items-center justify-center">
             3
           </Badge>
         </Button>
-        <Button variant="ghost" size="icon">
+        <Button variant="ghost" size="icon" aria-label="Quick add task">
           <Plus className="h-4 w-4" />
         </Button>
         <Button
