@@ -11,7 +11,7 @@ import {
   Cell,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { chartTheme } from "@/lib/chart-theme";
+
 
 export interface GradeDistributionItem {
   grade: string;
