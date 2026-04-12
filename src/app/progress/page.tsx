@@ -1,8 +1,11 @@
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { ProgressContent } from "@/components/progress/progress-content";
+import { OptimalPath } from "@/components/progress/optimal-path";
 import { PageHeader } from "@/components/ui/animated";
 import { ProgressSkeleton } from "@/components/ui/skeleton-cards";
+import { calculateOptimalPath } from "@/lib/path-calculator";
+import { MAX_UNITS_PER_TERM } from "@/lib/constants";
 import type { CourseStatus } from "@/lib/types";
 import type { CourseWithStatus } from "@/components/progress/types";
 
@@ -85,8 +88,29 @@ async function ProgressData() {
     };
   });
 
+  // Build optimal graduation path
+  const coursesForPath = coursesWithStatus.map((c) => ({
+    code: c.code,
+    title: c.title,
+    units: c.units,
+    prerequisites: c.prerequisites ?? [],
+    status: c.status,
+  }));
+
+  const termPlans = calculateOptimalPath(coursesForPath, MAX_UNITS_PER_TERM);
+
+  const totalRemainingUnits = coursesWithStatus
+    .filter((c) => c.status !== "passed")
+    .reduce((sum, c) => sum + c.units, 0);
+
   return (
-    <ProgressContent courses={coursesWithStatus} unlocksMap={unlocksMap} />
+    <>
+      <ProgressContent courses={coursesWithStatus} unlocksMap={unlocksMap} />
+      <OptimalPath
+        termPlans={termPlans}
+        totalRemainingUnits={totalRemainingUnits}
+      />
+    </>
   );
 }
 
