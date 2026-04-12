@@ -3,6 +3,8 @@
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { useState, useRef, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -38,13 +40,12 @@ export function ChatInterface() {
   });
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const isLoading = status === "submitted" || status === "streaming";
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   function handleSend(text: string) {
@@ -105,9 +106,33 @@ export function ChatInterface() {
               >
                 {message.parts.map((part, i) =>
                   part.type === "text" ? (
-                    <span key={i} className="whitespace-pre-wrap">
-                      {part.text}
-                    </span>
+                    message.role === "user" ? (
+                      <span key={i} className="whitespace-pre-wrap">
+                        {part.text}
+                      </span>
+                    ) : (
+                      <ReactMarkdown
+                        key={i}
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                          ul: ({ children }) => <ul className="list-disc pl-4 mb-2">{children}</ul>,
+                          ol: ({ children }) => <ol className="list-decimal pl-4 mb-2">{children}</ol>,
+                          li: ({ children }) => <li className="mb-0.5">{children}</li>,
+                          strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                          code: ({ children }) => (
+                            <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">{children}</code>
+                          ),
+                          a: ({ href, children }) => (
+                            <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">
+                              {children}
+                            </a>
+                          ),
+                        }}
+                      >
+                        {part.text}
+                      </ReactMarkdown>
+                    )
                   ) : null
                 )}
               </div>
@@ -131,6 +156,7 @@ export function ChatInterface() {
               </div>
             </div>
           )}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* Input area */}
@@ -153,6 +179,7 @@ export function ChatInterface() {
             type="submit"
             size="icon"
             disabled={isLoading || !input.trim()}
+            aria-label="Send message"
           >
             <Send className="size-4" />
           </Button>
