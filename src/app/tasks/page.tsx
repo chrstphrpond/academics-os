@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { QuickAddTask } from "@/components/tasks/quick-add-task";
 import { TaskList } from "@/components/tasks/task-list";
+import { CalendarEvents } from "@/components/tasks/calendar-events";
 import { PageHeader } from "@/components/ui/animated";
 import { TasksSkeleton } from "@/components/ui/skeleton-cards";
 
@@ -32,15 +33,18 @@ async function TasksContent() {
 
 export default function TasksPage() {
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <PageHeader
-        title="Tasks"
-        description="Manage your academic tasks and deadlines"
-      />
+    <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
+      <div className="space-y-6">
+        <PageHeader
+          title="Tasks"
+          description="Manage your academic tasks and deadlines"
+        />
 
-      <Suspense fallback={<TasksSkeleton />}>
-        <TasksContent />
-      </Suspense>
+        <Suspense fallback={<TasksSkeleton />}>
+          <TasksContent />
+        </Suspense>
+      </div>
+      <CalendarEvents />
     </div>
   );
 }
