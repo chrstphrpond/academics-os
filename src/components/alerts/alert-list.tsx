@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Bell } from "lucide-react";
 import { StaggerList, StaggerItem } from "@/components/ui/animated";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -34,14 +33,17 @@ export function AlertList({ alerts }: { alerts: AlertItem[] }) {
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
         {filters.map((f) => (
-          <Button
+          <button
             key={f}
-            variant={filter === f ? "default" : "outline"}
-            size="sm"
             onClick={() => setFilter(f)}
+            className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${
+              filter === f
+                ? "bg-white/10 text-white border-white/20"
+                : "bg-white/[0.02] text-white/50 border-white/[0.06] hover:bg-white/[0.05]"
+            }`}
           >
             {filterLabels[f]} ({counts[f]})
-          </Button>
+          </button>
         ))}
       </div>
 

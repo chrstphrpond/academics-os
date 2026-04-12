@@ -1,10 +1,9 @@
 "use client";
 
-import { useRef, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { motion } from "framer-motion";
 import { createTask } from "@/actions/tasks";
 import { toast } from "sonner";
 
@@ -12,34 +11,51 @@ export function QuickAddTask() {
   const formRef = useRef<HTMLFormElement>(null);
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [hasText, setHasText] = useState(false);
 
   function handleSubmit(formData: FormData) {
     startTransition(async () => {
       await createTask(formData);
       formRef.current?.reset();
+      setHasText(false);
       router.refresh();
       toast.success("Task added");
     });
   }
 
   return (
-    <form ref={formRef} action={handleSubmit} className="flex gap-2">
-      <Input
+    <form
+      ref={formRef}
+      action={handleSubmit}
+      className="flex items-center gap-2 bg-white/[0.02] backdrop-blur-sm border border-white/[0.06] rounded-xl px-3 py-2"
+    >
+      <input
         name="title"
         placeholder="Add a task..."
         required
-        className="flex-1"
         disabled={isPending}
+        onChange={(e) => setHasText(e.target.value.length > 0)}
+        className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/50 outline-none disabled:opacity-50"
       />
-      <Input
+      <input
         name="due_date"
         type="date"
-        className="w-40"
         disabled={isPending}
+        className="w-32 bg-transparent text-xs text-muted-foreground/70 outline-none [color-scheme:dark] disabled:opacity-50"
       />
-      <Button type="submit" size="icon" disabled={isPending} aria-label="Add task">
+      <motion.button
+        type="submit"
+        disabled={isPending}
+        whileTap={{ scale: 0.9 }}
+        className={`h-7 w-7 flex items-center justify-center rounded-lg transition-colors shrink-0 disabled:opacity-50 ${
+          hasText
+            ? "bg-primary text-primary-foreground"
+            : "bg-white/[0.05] text-muted-foreground"
+        }`}
+        aria-label="Add task"
+      >
         <Plus className="h-4 w-4" />
-      </Button>
+      </motion.button>
     </form>
   );
 }
