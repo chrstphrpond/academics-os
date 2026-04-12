@@ -35,7 +35,7 @@ export function GpaTrendChart({ termGpas }: GpaTrendChartProps) {
   }
 
   return (
-    <Card>
+    <Card aria-label="GPA trend chart showing performance across terms">
       <CardHeader>
         <CardTitle>GPA Trend</CardTitle>
       </CardHeader>

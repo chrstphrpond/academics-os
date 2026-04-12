@@ -28,6 +28,12 @@ export default function RootLayout({
       className={`${GeistSans.variable} ${GeistMono.variable}`}
     >
       <body className="min-h-dvh font-sans antialiased">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:z-[100] focus:p-3 focus:bg-background focus:text-foreground focus:border focus:border-border focus:rounded-md focus:top-2 focus:left-2"
+        >
+          Skip to main content
+        </a>
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
@@ -39,7 +45,7 @@ export default function RootLayout({
               <AppSidebar />
               <SidebarInset>
                 <TopBar />
-                <main className="flex-1 overflow-auto p-6 pb-16 md:pb-0">{children}</main>
+                <main id="main-content" className="flex-1 overflow-auto p-6 pb-16 md:pb-0">{children}</main>
               </SidebarInset>
             </SidebarProvider>
           </TooltipProvider>

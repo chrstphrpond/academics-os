@@ -47,7 +47,7 @@ export function GradeDistribution({ data }: GradeDistributionProps) {
   }
 
   return (
-    <Card>
+    <Card aria-label="Grade distribution showing count of each grade earned">
       <CardHeader>
         <CardTitle>Grade Distribution</CardTitle>
       </CardHeader>

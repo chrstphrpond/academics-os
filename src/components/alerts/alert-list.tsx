@@ -48,6 +48,7 @@ export function AlertList({ alerts }: { alerts: AlertItem[] }) {
       {filtered.length === 0 ? (
         <EmptyState icon={Bell} title="All clear" description="No active alerts right now" />
       ) : (
+        <div role="region" aria-label="Alert notifications">
         <StaggerList className="space-y-3">
           {filtered.map((alert) => (
             <StaggerItem key={alert.id}>
@@ -55,6 +56,7 @@ export function AlertList({ alerts }: { alerts: AlertItem[] }) {
             </StaggerItem>
           ))}
         </StaggerList>
+        </div>
       )}
     </div>
   );
