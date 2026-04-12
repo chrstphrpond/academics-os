@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { TopBar } from "@/components/layout/top-bar";
 import { Toaster } from "@/components/ui/sonner";
+import { CommandPalette } from "@/components/layout/command-palette";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -42,6 +43,7 @@ export default function RootLayout({
             </SidebarProvider>
           </TooltipProvider>
           <Toaster />
+          <CommandPalette />
         </ThemeProvider>
       </body>
     </html>
