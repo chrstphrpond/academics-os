@@ -29,8 +29,6 @@ export function UnitsSummary({ courses }: UnitsSummaryProps) {
     .filter((c) => c.status === "in_progress")
     .reduce((sum, c) => sum + c.units, 0);
 
-  const totalCurriculumUnits = courses.reduce((sum, c) => sum + c.units, 0);
-
   // Group by course type
   const typeMap = new Map<string, { passed: number; inProgress: number; total: number }>();
   for (const course of courses) {

@@ -1,4 +1,3 @@
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { CourseCard } from "./course-card";
 
 import type { CourseWithStatus } from "./types";

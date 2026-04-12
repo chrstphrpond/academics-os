@@ -81,7 +81,7 @@ async function main() {
     const termRaw = (row[0] || "").trim();
     const courseCode = (row[1] || "").trim();
     const courseTitle = (row[2] || "").trim();
-    const credits = (row[3] || "").trim();
+    // row[3] is credits (unused here, comes from courses table)
     const grade = (row[4] || "").trim();
 
     if (!termRaw || !courseCode) continue;

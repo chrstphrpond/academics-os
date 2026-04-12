@@ -42,7 +42,7 @@ const GRADE_DESCRIPTORS: [number, number, GradeDescriptor][] = [
 ];
 
 function getDescriptor(gpa: number): GradeDescriptor {
-  for (const [_min, max, desc] of GRADE_DESCRIPTORS) {
+  for (const [, max, desc] of GRADE_DESCRIPTORS) {
     if (gpa <= max) return desc;
   }
   return "Failed";
