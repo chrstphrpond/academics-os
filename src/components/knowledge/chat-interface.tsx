@@ -5,9 +5,8 @@ import { DefaultChatTransport } from "ai";
 import { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
 import {
   Bot,
   Send,
@@ -24,12 +23,28 @@ const SUGGESTED_QUESTIONS = [
   "What are the enrollment requirements?",
 ];
 
-function BouncingDots() {
+function TypingDots() {
   return (
-    <span className="inline-flex items-center gap-1">
-      <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:0ms]" />
-      <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:150ms]" />
-      <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:300ms]" />
+    <span className="inline-flex items-center gap-1.5">
+      {[0, 1, 2].map((i) => (
+        <motion.span
+          key={i}
+          className="size-1.5 rounded-full bg-primary/80"
+          animate={{
+            opacity: [0.3, 1, 0.3],
+            scale: [0.8, 1.1, 0.8],
+          }}
+          transition={{
+            duration: 1.2,
+            repeat: Infinity,
+            delay: i * 0.2,
+            ease: "easeInOut",
+          }}
+          style={{
+            boxShadow: "0 0 6px 1px oklch(0.541 0.24 264.376 / 0.4)",
+          }}
+        />
+      ))}
     </span>
   );
 }
@@ -43,6 +58,7 @@ export function ChatInterface() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const isLoading = status === "submitted" || status === "streaming";
+  const canSend = input.trim().length > 0 && !isLoading;
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -56,135 +72,189 @@ export function ChatInterface() {
   }
 
   return (
-    <Card className="flex h-[480px] flex-col">
-      {/* Messages area */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center gap-4">
-            <div className="rounded-full bg-primary/10 p-3">
-              <Sparkles className="size-6 text-primary" />
-            </div>
-            <div className="text-center">
-              <p className="font-medium">Ask anything about MMDC</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Get answers from the student handbook and FAQs
-              </p>
-            </div>
-            <div className="flex flex-wrap justify-center gap-2 max-w-lg">
-              {SUGGESTED_QUESTIONS.map((q) => (
-                <Button
-                  key={q}
-                  variant="outline"
-                  size="sm"
-                  className="text-xs"
-                  onClick={() => handleSend(q)}
-                >
-                  {q}
-                </Button>
-              ))}
-            </div>
-          </div>
-        ) : (
-          messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex gap-3 ${
-                message.role === "user" ? "justify-end" : "justify-start"
-              }`}
-            >
-              {message.role !== "user" && (
-                <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                  <Bot className="size-4 text-primary" />
-                </div>
-              )}
-              <div
-                className={`max-w-[75%] rounded-lg px-3 py-2 text-sm ${
-                  message.role === "user"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
-                }`}
-              >
-                {message.parts.map((part, i) =>
-                  part.type === "text" ? (
-                    message.role === "user" ? (
-                      <span key={i} className="whitespace-pre-wrap">
-                        {part.text}
-                      </span>
-                    ) : (
-                      <ReactMarkdown
-                        key={i}
-                        remarkPlugins={[remarkGfm]}
-                        components={{
-                          p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                          ul: ({ children }) => <ul className="list-disc pl-4 mb-2">{children}</ul>,
-                          ol: ({ children }) => <ol className="list-decimal pl-4 mb-2">{children}</ol>,
-                          li: ({ children }) => <li className="mb-0.5">{children}</li>,
-                          strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
-                          code: ({ children }) => (
-                            <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">{children}</code>
-                          ),
-                          a: ({ href, children }) => (
-                            <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">
-                              {children}
-                            </a>
-                          ),
-                        }}
-                      >
-                        {part.text}
-                      </ReactMarkdown>
-                    )
-                  ) : null
-                )}
-              </div>
-              {message.role === "user" && (
-                <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted">
-                  <User className="size-4 text-muted-foreground" />
-                </div>
-              )}
-            </div>
-          ))
-        )}
-        {isLoading &&
-          (messages.length === 0 ||
-            messages[messages.length - 1]?.role === "user") && (
-            <div className="flex gap-3">
-              <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                <Bot className="size-4 text-primary" />
-              </div>
-              <div className="rounded-lg bg-muted px-3 py-2">
-                <BouncingDots />
-              </div>
-            </div>
-          )}
-        <div ref={messagesEndRef} />
+    <div className="relative flex h-[480px] flex-col overflow-hidden rounded-2xl">
+      {/* Animated background blobs */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -top-24 -left-24 h-64 w-64 rounded-full bg-violet-500/[0.07] blur-3xl animate-pulse" />
+        <div className="absolute -bottom-24 -right-24 h-64 w-64 rounded-full bg-indigo-500/[0.07] blur-3xl animate-pulse [animation-delay:1s]" />
       </div>
 
-      {/* Input area */}
-      <div className="border-t p-3">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleSend(input);
-          }}
-          className="flex gap-2"
-        >
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask about courses, enrollment, grades..."
-            disabled={isLoading}
-            className="flex-1"
-          />
-          <Button
-            type="submit"
-            size="icon"
-            disabled={isLoading || !input.trim()}
-            aria-label="Send message"
+      {/* Glassmorphic container */}
+      <div className="relative flex h-full flex-col rounded-2xl border border-white/[0.05] bg-white/[0.02] backdrop-blur-2xl">
+        {/* Header gradient line */}
+        <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+
+        {/* Messages area */}
+        <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4">
+          {messages.length === 0 ? (
+            <div className="flex h-full flex-col items-center justify-center gap-4">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                className="rounded-full bg-primary/10 p-3"
+                style={{ boxShadow: "0 0 24px 4px oklch(0.541 0.24 264.376 / 0.15)" }}
+              >
+                <Sparkles className="size-6 text-primary" />
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.1 }}
+                className="text-center"
+              >
+                <p className="font-medium text-white/90">Ask anything about MMDC</p>
+                <p className="text-sm text-white/40 mt-1">
+                  Get answers from the student handbook and FAQs
+                </p>
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.2 }}
+                className="flex flex-wrap justify-center gap-2 max-w-lg"
+              >
+                {SUGGESTED_QUESTIONS.map((q, i) => (
+                  <motion.button
+                    key={q}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: 0.25 + i * 0.05 }}
+                    whileHover={{ scale: 1.03, borderColor: "rgba(255,255,255,0.2)" }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => handleSend(q)}
+                    className="rounded-full border border-white/[0.08] bg-white/[0.03] px-3.5 py-1.5 text-xs text-white/70 backdrop-blur-sm transition-colors hover:bg-white/[0.06] hover:text-white/90"
+                  >
+                    {q}
+                  </motion.button>
+                ))}
+              </motion.div>
+            </div>
+          ) : (
+            <AnimatePresence initial={false}>
+              {messages.map((message) => (
+                <motion.div
+                  key={message.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                  className={`flex gap-3 ${
+                    message.role === "user" ? "justify-end" : "justify-start"
+                  }`}
+                >
+                  {message.role !== "user" && (
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 ring-1 ring-primary/20">
+                      <Bot className="size-4 text-primary" />
+                    </div>
+                  )}
+                  <div
+                    className={`max-w-[75%] rounded-lg px-3 py-2 text-sm ${
+                      message.role === "user"
+                        ? "bg-white/[0.05] text-white/90 ring-1 ring-white/[0.08]"
+                        : "border-l-2 border-primary/30 bg-white/[0.02] text-white/80"
+                    }`}
+                  >
+                    {message.parts.map((part, i) =>
+                      part.type === "text" ? (
+                        message.role === "user" ? (
+                          <span key={i} className="whitespace-pre-wrap">
+                            {part.text}
+                          </span>
+                        ) : (
+                          <ReactMarkdown
+                            key={i}
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                              p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                              ul: ({ children }) => <ul className="list-disc pl-4 mb-2">{children}</ul>,
+                              ol: ({ children }) => <ol className="list-decimal pl-4 mb-2">{children}</ol>,
+                              li: ({ children }) => <li className="mb-0.5">{children}</li>,
+                              strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                              code: ({ children }) => (
+                                <code className="rounded bg-white/[0.06] px-1.5 py-0.5 text-xs font-mono">{children}</code>
+                              ),
+                              a: ({ href, children }) => (
+                                <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">
+                                  {children}
+                                </a>
+                              ),
+                            }}
+                          >
+                            {part.text}
+                          </ReactMarkdown>
+                        )
+                      ) : null
+                    )}
+                  </div>
+                  {message.role === "user" && (
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white/[0.06] ring-1 ring-white/[0.08]">
+                      <User className="size-4 text-white/60" />
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          )}
+          {isLoading &&
+            (messages.length === 0 ||
+              messages[messages.length - 1]?.role === "user") && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex gap-3"
+              >
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 ring-1 ring-primary/20">
+                  <Bot className="size-4 text-primary" />
+                </div>
+                <div className="rounded-lg border-l-2 border-primary/30 bg-white/[0.02] px-3 py-2.5">
+                  <TypingDots />
+                </div>
+              </motion.div>
+            )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Input area */}
+        <div className="border-t border-white/[0.06] p-3">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSend(input);
+            }}
+            className="flex items-center gap-2 rounded-xl bg-white/[0.03] px-3 py-1 ring-1 ring-white/[0.06] transition-all focus-within:ring-white/[0.12]"
           >
-            <Send className="size-4" />
-          </Button>
-        </form>
+            <textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend(input);
+                }
+              }}
+              placeholder="Ask about courses, enrollment, grades..."
+              disabled={isLoading}
+              rows={1}
+              className="flex-1 resize-none bg-transparent py-2 text-sm text-white/90 placeholder:text-white/20 focus:outline-none disabled:opacity-40"
+            />
+            <motion.div whileHover={canSend ? { scale: 1.05 } : {}} whileTap={canSend ? { scale: 0.95 } : {}}>
+              <Button
+                type="submit"
+                size="icon"
+                disabled={!canSend}
+                aria-label="Send message"
+                className={`size-8 rounded-lg transition-all ${
+                  canSend
+                    ? "bg-white text-black hover:bg-white/90 shadow-[0_0_12px_2px_rgba(255,255,255,0.1)]"
+                    : "bg-white/[0.06] text-white/30"
+                }`}
+              >
+                <Send className="size-3.5" />
+              </Button>
+            </motion.div>
+          </form>
+        </div>
       </div>
-    </Card>
+    </div>
   );
 }

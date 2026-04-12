@@ -2,6 +2,7 @@
 
 import { motion, type Variants } from "framer-motion";
 import { type ComponentProps } from "react";
+import { cn } from "@/lib/utils";
 
 // Stagger children on mount
 const staggerContainer: Variants = {
@@ -131,6 +132,24 @@ export function PageHeader({ title, description }: { title: string; description:
       <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{title}</h1>
       <p className="text-muted-foreground mt-1 text-sm hidden sm:block">{description}</p>
     </FadeIn>
+  );
+}
+
+// Premium gradient border card wrapper
+export function GlowCard({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn("relative group rounded-xl", className)}>
+      <div className="absolute -inset-[1px] rounded-xl bg-gradient-to-b from-white/[0.08] to-white/[0.02] pointer-events-none" />
+      <div className="relative rounded-xl bg-card p-6">
+        {children}
+      </div>
+    </div>
   );
 }
 
