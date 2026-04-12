@@ -14,8 +14,9 @@ import {
   GpaSimulator,
   type AvailableCourse,
 } from "@/components/grades/gpa-simulator";
-import { PageHeader } from "@/components/ui/animated";
+import { FadeIn } from "@/components/ui/animated";
 import { GradesSkeleton } from "@/components/ui/skeleton-cards";
+import { TranscriptUpload } from "@/components/grades/transcript-upload";
 
 async function GradesContent() {
   const supabase = await createClient();
@@ -122,10 +123,15 @@ async function GradesContent() {
 export default function GradesPage() {
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Grade Analyzer"
-        description="Analyze your grades, GPA trends, and simulate future outcomes"
-      />
+      <FadeIn>
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Grade Analyzer</h1>
+            <p className="text-muted-foreground mt-1 text-sm hidden sm:block">Analyze your grades, GPA trends, and simulate future outcomes</p>
+          </div>
+          <TranscriptUpload />
+        </div>
+      </FadeIn>
 
       <Suspense fallback={<GradesSkeleton />}>
         <GradesContent />
