@@ -44,7 +44,7 @@ export function CourseTable({ courses }: CourseTableProps) {
   return (
     <div className="rounded-lg border">
       <Table>
-        <TableHeader>
+        <TableHeader className="sticky top-0 bg-card z-10">
           <TableRow>
             <TableHead>Code</TableHead>
             <TableHead>Title</TableHead>
@@ -66,8 +66,8 @@ export function CourseTable({ courses }: CourseTableProps) {
                 ? getGradeColor(course.grade)
                 : "zinc";
               return (
-                <TableRow key={`${course.code}-${course.term}-${course.schoolYear}`}>
-                  <TableCell className="font-mono text-sm font-medium">
+                <TableRow key={`${course.code}-${course.term}-${course.schoolYear}`} className="even:bg-muted/5">
+                  <TableCell className="font-mono text-xs font-medium">
                     {course.code}
                   </TableCell>
                   <TableCell>{course.title}</TableCell>

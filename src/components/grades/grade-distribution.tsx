@@ -11,6 +11,7 @@ import {
   Cell,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { chartTheme } from "@/lib/chart-theme";
 
 export interface GradeDistributionItem {
   grade: string;
@@ -57,27 +58,27 @@ export function GradeDistribution({ data }: GradeDistributionProps) {
               data={data}
               margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
             >
-              <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+              <CartesianGrid
+                stroke={chartTheme.grid.stroke}
+                strokeDasharray={chartTheme.grid.strokeDasharray}
+              />
               <XAxis
                 dataKey="grade"
-                tick={{ fontSize: 12 }}
-                className="fill-muted-foreground"
+                tick={{ fontSize: chartTheme.axis.fontSize, fill: chartTheme.axis.fill }}
+                tickLine={chartTheme.axis.tickLine}
+                axisLine={chartTheme.axis.axisLine}
               />
               <YAxis
                 allowDecimals={false}
-                tick={{ fontSize: 12 }}
-                className="fill-muted-foreground"
+                tick={{ fontSize: chartTheme.axis.fontSize, fill: chartTheme.axis.fill }}
+                tickLine={chartTheme.axis.tickLine}
+                axisLine={chartTheme.axis.axisLine}
               />
               <Tooltip
-                contentStyle={{
-                  backgroundColor: "hsl(var(--popover))",
-                  border: "1px solid hsl(var(--border))",
-                  borderRadius: "8px",
-                  color: "hsl(var(--popover-foreground))",
-                }}
+                contentStyle={chartTheme.tooltip.contentStyle}
                 formatter={(value) => [Number(value), "Courses"]}
               />
-              <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+              <Bar dataKey="count" radius={[4, 4, 0, 0]} animationDuration={800}>
                 {data.map((entry) => (
                   <Cell key={entry.grade} fill={getBarColor(entry.grade)} />
                 ))}

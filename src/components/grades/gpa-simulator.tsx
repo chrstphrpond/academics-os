@@ -10,7 +10,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { simulateGpa, type EnrollmentWithCourse } from "@/lib/gpa";
+import { Button } from "@/components/ui/button";
+import { AnimatedNumber } from "@/components/ui/animated";
+import { simulateGpa, calculateGpa, type EnrollmentWithCourse } from "@/lib/gpa";
 import { MMDC_GRADE_SCALE } from "@/lib/constants";
 
 export interface AvailableCourse {
@@ -37,6 +39,11 @@ export function GpaSimulator({
     Record<string, number | null>
   >({});
 
+  const currentGpa = useMemo(
+    () => calculateGpa(currentEnrollments).gpa,
+    [currentEnrollments]
+  );
+
   const projectedGpa = useMemo(() => {
     const hypotheticals = Object.entries(hypotheticalGrades)
       .filter(([, grade]) => grade !== null)
@@ -49,6 +56,15 @@ export function GpaSimulator({
     if (hypotheticals.length === 0) return null;
     return simulateGpa(currentEnrollments, hypotheticals);
   }, [hypotheticalGrades, currentEnrollments, availableCourses]);
+
+  const projectedColor =
+    projectedGpa === null
+      ? ""
+      : projectedGpa < currentGpa
+        ? "text-emerald-500"
+        : projectedGpa > currentGpa
+          ? "text-red-500"
+          : "";
 
   const activeCount = Object.values(hypotheticalGrades).filter(
     (g) => g !== null
@@ -81,11 +97,22 @@ export function GpaSimulator({
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span>GPA Simulator</span>
-          {projectedGpa !== null && (
-            <Badge variant="secondary" className="text-sm font-mono">
-              Projected: {projectedGpa.toFixed(2)}
-            </Badge>
-          )}
+          <div className="flex items-center gap-2">
+            {projectedGpa !== null && (
+              <>
+                <Badge variant="secondary" className={`text-sm font-mono ${projectedColor}`}>
+                  Projected: <AnimatedNumber value={projectedGpa} decimals={2} />
+                </Badge>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setHypotheticalGrades({})}
+                >
+                  Reset
+                </Button>
+              </>
+            )}
+          </div>
         </CardTitle>
         <p className="text-muted-foreground text-sm">
           Select hypothetical grades for upcoming courses to see your projected
