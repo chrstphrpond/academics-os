@@ -7,6 +7,7 @@ import { InteractiveCard } from "@/components/ui/animated";
 import { dismissAlert } from "@/actions/alerts";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
+import { toast } from "sonner";
 
 export interface AlertItem {
   id: string;
@@ -48,6 +49,7 @@ export function AlertCard({ alert }: { alert: AlertItem }) {
     startTransition(async () => {
       await dismissAlert(alert.id);
       router.refresh();
+      toast("Alert dismissed");
     });
   }
 

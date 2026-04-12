@@ -6,6 +6,7 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createTask } from "@/actions/tasks";
+import { toast } from "sonner";
 
 export function QuickAddTask() {
   const formRef = useRef<HTMLFormElement>(null);
@@ -17,6 +18,7 @@ export function QuickAddTask() {
       await createTask(formData);
       formRef.current?.reset();
       router.refresh();
+      toast.success("Task added");
     });
   }
 

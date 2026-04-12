@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toggleTask, deleteTask } from "@/actions/tasks";
+import { toast } from "sonner";
 
 export interface TaskItem {
   id: string;
@@ -22,9 +23,11 @@ export function TaskCard({ task }: { task: TaskItem }) {
   const [isPending, startTransition] = useTransition();
 
   function handleToggle() {
+    const newCompleted = !task.completed;
     startTransition(async () => {
-      await toggleTask(task.id, !task.completed);
+      await toggleTask(task.id, newCompleted);
       router.refresh();
+      toast.success(newCompleted ? "Task completed" : "Task reopened");
     });
   }
 
@@ -32,6 +35,7 @@ export function TaskCard({ task }: { task: TaskItem }) {
     startTransition(async () => {
       await deleteTask(task.id);
       router.refresh();
+      toast("Task deleted");
     });
   }
 

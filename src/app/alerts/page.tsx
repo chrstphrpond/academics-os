@@ -1,9 +1,7 @@
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
-import { refreshAlerts } from "@/actions/alerts";
 import { AlertList } from "@/components/alerts/alert-list";
-import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
+import { RefreshButton } from "@/components/alerts/refresh-button";
 import { PageHeader } from "@/components/ui/animated";
 import { AlertsSkeleton } from "@/components/ui/skeleton-cards";
 
@@ -34,12 +32,7 @@ export default function AlertsPage() {
           title="Smart Alerts"
           description="Smart notifications about deadlines and grade changes"
         />
-        <form action={refreshAlerts}>
-          <Button variant="outline" size="sm" type="submit">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
-        </form>
+        <RefreshButton />
       </div>
 
       <Suspense fallback={<AlertsSkeleton />}>

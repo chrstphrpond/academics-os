@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Bell } from "lucide-react";
 import { StaggerList, StaggerItem } from "@/components/ui/animated";
+import { EmptyState } from "@/components/ui/empty-state";
 import { AlertCard, type AlertItem } from "./alert-card";
 
 const filters = ["all", "critical", "warning", "info"] as const;
@@ -44,9 +46,7 @@ export function AlertList({ alerts }: { alerts: AlertItem[] }) {
       </div>
 
       {filtered.length === 0 ? (
-        <p className="text-sm text-muted-foreground py-8 text-center">
-          No {filter === "all" ? "" : filter} alerts
-        </p>
+        <EmptyState icon={Bell} title="All clear" description="No active alerts right now" />
       ) : (
         <StaggerList className="space-y-3">
           {filtered.map((alert) => (

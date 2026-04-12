@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, CheckSquare } from "lucide-react";
 import { StaggerList, StaggerItem } from "@/components/ui/animated";
+import { EmptyState } from "@/components/ui/empty-state";
 import { TaskCard, type TaskItem } from "./task-card";
 
 export function TaskList({ tasks }: { tasks: TaskItem[] }) {
@@ -15,9 +16,7 @@ export function TaskList({ tasks }: { tasks: TaskItem[] }) {
   return (
     <div className="space-y-3">
       {pending.length === 0 && completed.length === 0 && (
-        <p className="text-sm text-muted-foreground py-8 text-center">
-          No tasks yet. Add one above!
-        </p>
+        <EmptyState icon={CheckSquare} title="No tasks yet" description="Add your first task above to get started" />
       )}
 
       <StaggerList className="space-y-3">
