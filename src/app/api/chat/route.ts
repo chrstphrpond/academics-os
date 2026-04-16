@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
 import { convertToModelMessages, streamText, UIMessage } from "ai";
-import { gateway } from "@ai-sdk/gateway";
 
 export const maxDuration = 30;
 
@@ -11,7 +10,6 @@ export async function POST(req: Request) {
   const query =
     lastMessage.parts?.find((p) => p.type === "text")?.text || "";
 
-  // Search knowledge base using full-text search
   const supabase = await createClient();
   const { data: chunks } = await supabase
     .from("knowledge_chunks")
@@ -30,9 +28,14 @@ export async function POST(req: Request) {
       : "No relevant information found in the knowledge base.";
 
   const result = streamText({
-    model: gateway("anthropic/claude-sonnet-4.6"),
+    model: "anthropic/claude-sonnet-4.6",
     system: `You are an academic assistant for MMDC (Mapua Malayan Digital College). Answer questions based ONLY on the provided context from the school's FAQ and student handbook. If the context doesn't contain relevant information, say so clearly. Always cite your sources.\n\nContext from MMDC Knowledge Base:\n${context}`,
     messages: await convertToModelMessages(messages),
+    providerOptions: {
+      gateway: {
+        tags: ["feature:knowledge-chat", "env:production"],
+      },
+    },
   });
 
   return result.toUIMessageStreamResponse();
