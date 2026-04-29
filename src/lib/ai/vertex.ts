@@ -12,7 +12,16 @@ function provider() {
       "GOOGLE_PROJECT_ID is not set. Run `gcloud auth application-default login` and `vercel env add GOOGLE_PROJECT_ID` (and GOOGLE_LOCATION) before calling Vertex."
     );
   }
-  _provider = createVertex({ project, location });
+  // Project-local override: a service-account JSON path scoped to this project,
+  // so a globally-set GOOGLE_APPLICATION_CREDENTIALS (e.g. for another GCP project)
+  // doesn't leak into our calls. Falls back to ADC (and thus GOOGLE_APPLICATION_CREDENTIALS)
+  // when not set, which is the production path under Workload Identity Federation.
+  const keyFile = process.env.VERTEX_KEY_PATH;
+  _provider = createVertex({
+    project,
+    location,
+    ...(keyFile ? { googleAuthOptions: { keyFilename: keyFile } } : {}),
+  });
   return _provider;
 }
 
