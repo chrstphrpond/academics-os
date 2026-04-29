@@ -15,6 +15,13 @@
       "when": 1777444756500,
       "tag": "0001_short_speed",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1777446938538,
+      "tag": "0002_faulty_preak",
+      "breakpoints": true
     }
   ]
 }

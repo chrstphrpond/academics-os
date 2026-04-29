@@ -270,6 +270,21 @@ export const agentMessages = pgTable(
   })
 );
 
+export const scholarships = pgTable(
+  "scholarships",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull().unique(),
+    minGpa: text("min_gpa").notNull(), // stored as text to preserve "1.00" formatting
+    maxGpa: text("max_gpa").notNull(),
+    note: text("note"),
+    sourceChunkId: uuid("source_chunk_id").references(() => knowledgeChunks.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  }
+);
+
 // Inferred select/insert types for ergonomic use elsewhere
 export type Student = typeof students.$inferSelect;
 export type NewStudent = typeof students.$inferInsert;
@@ -286,6 +301,8 @@ export type AgentConversation = typeof agentConversations.$inferSelect;
 export type NewAgentConversation = typeof agentConversations.$inferInsert;
 export type AgentMessage = typeof agentMessages.$inferSelect;
 export type NewAgentMessage = typeof agentMessages.$inferInsert;
+export type Scholarship = typeof scholarships.$inferSelect;
+export type NewScholarship = typeof scholarships.$inferInsert;
 
 // ---------- Relations (for Drizzle relational queries) ----------
 
