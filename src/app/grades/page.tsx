@@ -1,5 +1,6 @@
 import { Suspense } from "react";
-import { db, schema, getCurrentStudentIdLegacy } from "@/lib/db";
+import { db, schema } from "@/lib/db";
+import { withAuth, getCurrentStudentId } from "@/lib/db/auth";
 import { eq, asc } from "drizzle-orm";
 import { calculateTermGpas, type EnrollmentWithCourse } from "@/lib/gpa";
 import { GpaTrendChart } from "@/components/grades/gpa-trend-chart";
@@ -20,24 +21,9 @@ import { GradesSkeleton } from "@/components/ui/skeleton-cards";
 import { TranscriptUpload } from "@/components/grades/transcript-upload";
 
 async function GradesContent() {
-  const studentId = await getCurrentStudentIdLegacy().catch(() => null);
+  const studentId = await getCurrentStudentId();
 
-  // Fetch all enrollments with course data
-  const allEnrollments = studentId
-    ? await db
-        .select({
-          grade: schema.enrollments.grade,
-          status: schema.enrollments.status,
-          term: schema.enrollments.term,
-          school_year: schema.enrollments.schoolYear,
-          course_id: schema.enrollments.courseId,
-        })
-        .from(schema.enrollments)
-        .where(eq(schema.enrollments.studentId, studentId))
-        .orderBy(asc(schema.enrollments.schoolYear), asc(schema.enrollments.term))
-    : [];
-
-  // Fetch all courses
+  // Fetch all courses — reference table, safe on plain db
   const allCourses = await db
     .select({
       id: schema.courses.id,
@@ -46,6 +32,23 @@ async function GradesContent() {
       units: schema.courses.units,
     })
     .from(schema.courses);
+
+  // Fetch enrollments through withAuth when we have a student
+  const allEnrollments = studentId
+    ? await withAuth(async (tx) =>
+        tx
+          .select({
+            grade: schema.enrollments.grade,
+            status: schema.enrollments.status,
+            term: schema.enrollments.term,
+            school_year: schema.enrollments.schoolYear,
+            course_id: schema.enrollments.courseId,
+          })
+          .from(schema.enrollments)
+          .where(eq(schema.enrollments.studentId, studentId))
+          .orderBy(asc(schema.enrollments.schoolYear), asc(schema.enrollments.term))
+      )
+    : [];
 
   // Build course lookup
   const courseMap = new Map(

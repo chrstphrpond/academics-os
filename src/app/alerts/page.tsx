@@ -1,5 +1,6 @@
 import { Suspense } from "react";
-import { db, schema } from "@/lib/db";
+import { schema } from "@/lib/db";
+import { withAuth, getCurrentStudentId } from "@/lib/db/auth";
 import { eq, desc } from "drizzle-orm";
 import { AlertList } from "@/components/alerts/alert-list";
 import { RefreshButton } from "@/components/alerts/refresh-button";
@@ -7,20 +8,26 @@ import { PageHeader } from "@/components/ui/animated";
 import { AlertsSkeleton } from "@/components/ui/skeleton-cards";
 
 async function AlertsContent() {
-  const severityOrder = ["critical", "warning", "info"];
+  const studentId = await getCurrentStudentId();
 
-  const rows = await db
-    .select({
-      id: schema.alerts.id,
-      title: schema.alerts.title,
-      message: schema.alerts.message,
-      severity: schema.alerts.severity,
-      createdAt: schema.alerts.createdAt,
-      dueDate: schema.alerts.dueDate,
-    })
-    .from(schema.alerts)
-    .where(eq(schema.alerts.dismissed, false))
-    .orderBy(desc(schema.alerts.createdAt));
+  const rows = studentId
+    ? await withAuth(async (tx) =>
+        tx
+          .select({
+            id: schema.alerts.id,
+            title: schema.alerts.title,
+            message: schema.alerts.message,
+            severity: schema.alerts.severity,
+            createdAt: schema.alerts.createdAt,
+            dueDate: schema.alerts.dueDate,
+          })
+          .from(schema.alerts)
+          .where(eq(schema.alerts.dismissed, false))
+          .orderBy(desc(schema.alerts.createdAt))
+      )
+    : [];
+
+  const severityOrder = ["critical", "warning", "info"];
 
   const alerts = rows.map((r) => ({
     id: r.id,

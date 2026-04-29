@@ -1,7 +1,8 @@
 "use server";
 
 import { updateTag } from "next/cache";
-import { db, schema, getCurrentStudentIdLegacy } from "@/lib/db";
+import { db, schema } from "@/lib/db";
+import { withAuth, getCurrentStudentId } from "@/lib/db/auth";
 import { eq } from "drizzle-orm";
 
 function gradeToStatus(grade: string): string {
@@ -77,13 +78,13 @@ export async function uploadTranscript(formData: FormData) {
     return { success: false as const, error: "Could not find header row in CSV. Expected 'Term,Course Code,Course Title,Credits,Grade'" };
   }
 
-  // Lookup student (single student app)
-  const studentId = await getCurrentStudentIdLegacy().catch(() => null);
+  // Lookup student
+  const studentId = await getCurrentStudentId();
   if (!studentId) {
     return { success: false as const, error: "Could not find student record" };
   }
 
-  // Fetch all courses for lookup
+  // Fetch all courses for lookup — reference table, safe on plain db
   const allCourses = await db
     .select({ id: schema.courses.id, code: schema.courses.code })
     .from(schema.courses);
@@ -145,20 +146,16 @@ export async function uploadTranscript(formData: FormData) {
     };
   }
 
-  // Delete existing enrollments for the student
+  // Delete existing enrollments and insert new ones within a single auth-aware transaction
   try {
-    await db
-      .delete(schema.enrollments)
-      .where(eq(schema.enrollments.studentId, studentId));
+    await withAuth(async (tx) => {
+      await tx
+        .delete(schema.enrollments)
+        .where(eq(schema.enrollments.studentId, studentId));
+      await tx.insert(schema.enrollments).values(enrollments);
+    });
   } catch (e) {
-    return { success: false as const, error: `Failed to clear existing enrollments: ${String(e)}` };
-  }
-
-  // Insert new enrollments
-  try {
-    await db.insert(schema.enrollments).values(enrollments);
-  } catch (e) {
-    return { success: false as const, error: `Failed to insert enrollments: ${String(e)}` };
+    return { success: false as const, error: `Failed to upload transcript: ${String(e)}` };
   }
 
   updateTag("enrollments");

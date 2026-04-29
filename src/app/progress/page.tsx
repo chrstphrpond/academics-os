@@ -1,5 +1,6 @@
 import { Suspense } from "react";
-import { db, schema, getCurrentStudentIdLegacy } from "@/lib/db";
+import { db, schema } from "@/lib/db";
+import { withAuth, getCurrentStudentId } from "@/lib/db/auth";
 import { eq, asc } from "drizzle-orm";
 import { ProgressContent } from "@/components/progress/progress-content";
 import { OptimalPath } from "@/components/progress/optimal-path";
@@ -11,9 +12,9 @@ import type { CourseStatus } from "@/lib/types";
 import type { CourseWithStatus } from "@/components/progress/types";
 
 async function ProgressData() {
-  const studentId = await getCurrentStudentIdLegacy().catch(() => null);
+  const studentId = await getCurrentStudentId();
 
-  // Fetch all courses ordered by year then term
+  // Fetch all courses ordered by year then term — reference table, safe on plain db
   const allCourses = await db
     .select({
       id: schema.courses.id,
@@ -28,16 +29,18 @@ async function ProgressData() {
     .from(schema.courses)
     .orderBy(asc(schema.courses.year), asc(schema.courses.term));
 
-  // Fetch all enrollments for the student
+  // Fetch all enrollments for the student through withAuth
   const allEnrollments = studentId
-    ? await db
-        .select({
-          course_id: schema.enrollments.courseId,
-          status: schema.enrollments.status,
-          grade: schema.enrollments.grade,
-        })
-        .from(schema.enrollments)
-        .where(eq(schema.enrollments.studentId, studentId))
+    ? await withAuth(async (tx) =>
+        tx
+          .select({
+            course_id: schema.enrollments.courseId,
+            status: schema.enrollments.status,
+            grade: schema.enrollments.grade,
+          })
+          .from(schema.enrollments)
+          .where(eq(schema.enrollments.studentId, studentId))
+      )
     : [];
 
   // Build enrollment lookup by course_id

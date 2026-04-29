@@ -1,5 +1,6 @@
 import { Suspense } from "react";
-import { db, schema, getCurrentStudentIdLegacy } from "@/lib/db";
+import { schema } from "@/lib/db";
+import { withAuth, getCurrentStudentId } from "@/lib/db/auth";
 import { eq, desc } from "drizzle-orm";
 import { QuickAddTask } from "@/components/tasks/quick-add-task";
 import { TaskList } from "@/components/tasks/task-list";
@@ -8,14 +9,16 @@ import { PageHeader } from "@/components/ui/animated";
 import { TasksSkeleton } from "@/components/ui/skeleton-cards";
 
 async function TasksContent() {
-  const studentId = await getCurrentStudentIdLegacy().catch(() => null);
+  const studentId = await getCurrentStudentId();
 
   const taskRows = studentId
-    ? await db.query.tasks.findMany({
-        where: eq(schema.tasks.studentId, studentId),
-        with: { course: true },
-        orderBy: [desc(schema.tasks.createdAt)],
-      })
+    ? await withAuth(async (tx) =>
+        tx.query.tasks.findMany({
+          where: eq(schema.tasks.studentId, studentId),
+          with: { course: true },
+          orderBy: [desc(schema.tasks.createdAt)],
+        })
+      )
     : [];
 
   const taskItems = taskRows.map((t) => ({
