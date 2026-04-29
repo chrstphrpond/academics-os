@@ -12,7 +12,7 @@ import {
   index,
   vector,
 } from "drizzle-orm/pg-core";
-import { sql } from "drizzle-orm";
+import { sql, relations } from "drizzle-orm";
 
 // ---------- Domain enums (kept as TEXT + CHECK at the SQL level for now) ----------
 
@@ -243,3 +243,19 @@ export type AgentRun = typeof agentRuns.$inferSelect;
 export type NewAgentRun = typeof agentRuns.$inferInsert;
 export type AgentAction = typeof agentActions.$inferSelect;
 export type NewAgentAction = typeof agentActions.$inferInsert;
+
+// ---------- Relations (for Drizzle relational queries) ----------
+
+export const enrollmentsRelations = relations(enrollments, ({ one }) => ({
+  student: one(students, { fields: [enrollments.studentId], references: [students.id] }),
+  course: one(courses, { fields: [enrollments.courseId], references: [courses.id] }),
+}));
+
+export const tasksRelations = relations(tasks, ({ one }) => ({
+  student: one(students, { fields: [tasks.studentId], references: [students.id] }),
+  course: one(courses, { fields: [tasks.courseId], references: [courses.id] }),
+}));
+
+export const alertsRelations = relations(alerts, ({ one }) => ({
+  student: one(students, { fields: [alerts.studentId], references: [students.id] }),
+}));

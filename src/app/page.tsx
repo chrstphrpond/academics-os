@@ -1,5 +1,6 @@
 import { Suspense } from "react";
-import { createClient } from "@/lib/supabase/server";
+import { db, schema, getCurrentStudentIdLegacy } from "@/lib/db";
+import { eq, desc, and } from "drizzle-orm";
 import { calculateGpa } from "@/lib/gpa";
 import { GpaCard } from "@/components/dashboard/gpa-card";
 import { ProgressRing } from "@/components/dashboard/progress-ring";
@@ -14,30 +15,32 @@ import {
 import { DashboardSkeleton } from "@/components/ui/skeleton-cards";
 
 async function DashboardContent() {
-  const supabase = await createClient();
+  const studentId = await getCurrentStudentIdLegacy().catch(() => null);
 
-  // Fetch all enrollments with course data
-  const { data: enrollments } = await supabase
-    .from("enrollments")
-    .select("grade, status, term, school_year, course_id, courses(code, title, units)")
-    .order("school_year", { ascending: false })
-    .order("term", { ascending: false });
+  // Fetch all enrollments with course data using relational query
+  const enrollmentRows = studentId
+    ? await db.query.enrollments.findMany({
+        where: eq(schema.enrollments.studentId, studentId),
+        with: { course: true },
+        orderBy: [
+          desc(schema.enrollments.schoolYear),
+          desc(schema.enrollments.term),
+        ],
+      })
+    : [];
 
   // Transform enrollments to match the expected shape
-  const mappedEnrollments = (enrollments ?? []).map((e) => {
-    const course = e.courses as unknown as { code: string; title: string; units: number };
-    return {
-      grade: e.grade,
-      status: e.status,
-      term: e.term,
-      school_year: e.school_year,
-      course: {
-        code: course?.code ?? "",
-        title: course?.title ?? "",
-        units: course?.units ?? 0,
-      },
-    };
-  });
+  const mappedEnrollments = enrollmentRows.map((e) => ({
+    grade: e.grade,
+    status: e.status,
+    term: e.term,
+    school_year: e.schoolYear,
+    course: {
+      code: e.course?.code ?? "",
+      title: e.course?.title ?? "",
+      units: e.course?.units ?? 0,
+    },
+  }));
 
   // Calculate GPA
   const gpaResult = calculateGpa(mappedEnrollments);
@@ -53,14 +56,27 @@ async function DashboardContent() {
 
   // Fetch active alerts (non-dismissed, sorted by severity)
   const severityOrder = ["critical", "warning", "info"];
-  const { data: alerts } = await supabase
-    .from("alerts")
-    .select("id, type, title, message, severity")
-    .eq("dismissed", false)
-    .order("created_at", { ascending: false })
-    .limit(10);
+  const alertRows = studentId
+    ? await db
+        .select({
+          id: schema.alerts.id,
+          type: schema.alerts.type,
+          title: schema.alerts.title,
+          message: schema.alerts.message,
+          severity: schema.alerts.severity,
+        })
+        .from(schema.alerts)
+        .where(
+          and(
+            eq(schema.alerts.studentId, studentId),
+            eq(schema.alerts.dismissed, false)
+          )
+        )
+        .orderBy(desc(schema.alerts.createdAt))
+        .limit(10)
+    : [];
 
-  const sortedAlerts = (alerts ?? []).sort(
+  const sortedAlerts = alertRows.sort(
     (a, b) => severityOrder.indexOf(a.severity) - severityOrder.indexOf(b.severity)
   );
 

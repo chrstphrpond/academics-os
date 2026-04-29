@@ -1,5 +1,6 @@
 import { Suspense } from "react";
-import { createClient } from "@/lib/supabase/server";
+import { db, schema, getCurrentStudentIdLegacy } from "@/lib/db";
+import { eq, asc } from "drizzle-orm";
 import { calculateTermGpas, type EnrollmentWithCourse } from "@/lib/gpa";
 import { GpaTrendChart } from "@/components/grades/gpa-trend-chart";
 import {
@@ -19,22 +20,32 @@ import { GradesSkeleton } from "@/components/ui/skeleton-cards";
 import { TranscriptUpload } from "@/components/grades/transcript-upload";
 
 async function GradesContent() {
-  const supabase = await createClient();
+  const studentId = await getCurrentStudentIdLegacy().catch(() => null);
 
   // Fetch all enrollments with course data
-  const { data: enrollments } = await supabase
-    .from("enrollments")
-    .select("grade, status, term, school_year, course_id")
-    .order("school_year")
-    .order("term");
+  const allEnrollments = studentId
+    ? await db
+        .select({
+          grade: schema.enrollments.grade,
+          status: schema.enrollments.status,
+          term: schema.enrollments.term,
+          school_year: schema.enrollments.schoolYear,
+          course_id: schema.enrollments.courseId,
+        })
+        .from(schema.enrollments)
+        .where(eq(schema.enrollments.studentId, studentId))
+        .orderBy(asc(schema.enrollments.schoolYear), asc(schema.enrollments.term))
+    : [];
 
   // Fetch all courses
-  const { data: courses } = await supabase
-    .from("courses")
-    .select("id, code, title, units");
-
-  const allEnrollments = enrollments ?? [];
-  const allCourses = courses ?? [];
+  const allCourses = await db
+    .select({
+      id: schema.courses.id,
+      code: schema.courses.code,
+      title: schema.courses.title,
+      units: schema.courses.units,
+    })
+    .from(schema.courses);
 
   // Build course lookup
   const courseMap = new Map(
@@ -43,18 +54,18 @@ async function GradesContent() {
 
   // Build EnrollmentWithCourse objects
   const enrollmentsWithCourse: EnrollmentWithCourse[] = allEnrollments
-    .map((e) => {
+    .flatMap((e) => {
       const course = courseMap.get(e.course_id);
-      if (!course) return null;
-      return {
+      if (!course) return [];
+      const row: EnrollmentWithCourse = {
         grade: e.grade,
-        status: e.status,
+        status: e.status as string,
         term: e.term,
         school_year: e.school_year,
         course,
       };
-    })
-    .filter((e): e is EnrollmentWithCourse => e !== null);
+      return [row];
+    });
 
   // Calculate term GPAs
   const termGpas = calculateTermGpas(enrollmentsWithCourse);

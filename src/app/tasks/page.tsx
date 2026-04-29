@@ -1,5 +1,6 @@
 import { Suspense } from "react";
-import { createClient } from "@/lib/supabase/server";
+import { db, schema, getCurrentStudentIdLegacy } from "@/lib/db";
+import { eq, desc } from "drizzle-orm";
 import { QuickAddTask } from "@/components/tasks/quick-add-task";
 import { TaskList } from "@/components/tasks/task-list";
 import { CalendarEvents } from "@/components/tasks/calendar-events";
@@ -7,20 +8,23 @@ import { PageHeader } from "@/components/ui/animated";
 import { TasksSkeleton } from "@/components/ui/skeleton-cards";
 
 async function TasksContent() {
-  const supabase = await createClient();
+  const studentId = await getCurrentStudentIdLegacy().catch(() => null);
 
-  const { data: tasks } = await supabase
-    .from("tasks")
-    .select("id, title, description, due_date, completed, course_id, courses(title)")
-    .order("created_at", { ascending: false });
+  const taskRows = studentId
+    ? await db.query.tasks.findMany({
+        where: eq(schema.tasks.studentId, studentId),
+        with: { course: true },
+        orderBy: [desc(schema.tasks.createdAt)],
+      })
+    : [];
 
-  const taskItems = (tasks ?? []).map((t) => ({
+  const taskItems = taskRows.map((t) => ({
     id: t.id,
     title: t.title,
     description: t.description,
-    due_date: t.due_date,
+    due_date: t.dueDate ?? null,
     completed: t.completed,
-    course_title: (t.courses as unknown as { title: string } | null)?.title ?? null,
+    course_title: t.course?.title ?? null,
   }));
 
   return (

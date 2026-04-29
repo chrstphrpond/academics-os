@@ -1,4 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
+import { db, schema } from "@/lib/db";
+import { sql } from "drizzle-orm";
 import { convertToModelMessages, streamText, UIMessage } from "ai";
 
 export const maxDuration = 30;
@@ -10,11 +11,17 @@ export async function POST(req: Request) {
   const query =
     lastMessage.parts?.find((p) => p.type === "text")?.text || "";
 
-  const supabase = await createClient();
-  const { data: chunks } = await supabase
-    .from("knowledge_chunks")
-    .select("title, content, url, source")
-    .textSearch("fts", query.split(" ").join(" & "), { type: "plain" })
+  const fts = sql`to_tsvector('english', ${schema.knowledgeChunks.title} || ' ' || ${schema.knowledgeChunks.content}) @@ plainto_tsquery('english', ${query})`;
+
+  const chunks = await db
+    .select({
+      title: schema.knowledgeChunks.title,
+      content: schema.knowledgeChunks.content,
+      url: schema.knowledgeChunks.url,
+      source: schema.knowledgeChunks.source,
+    })
+    .from(schema.knowledgeChunks)
+    .where(fts)
     .limit(5);
 
   const context =

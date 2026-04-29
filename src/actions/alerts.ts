@@ -1,51 +1,63 @@
 "use server";
 
 import { updateTag } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { db, schema, getCurrentStudentIdLegacy } from "@/lib/db";
+import { eq, and } from "drizzle-orm";
 import { generateAlerts } from "@/lib/alerts-engine";
 
 export async function refreshAlerts() {
-  const supabase = await createClient();
-  const { data: student } = await supabase
-    .from("students")
-    .select("id")
-    .single();
-  if (!student) return;
+  const studentId = await getCurrentStudentIdLegacy().catch(() => null);
+  if (!studentId) return;
 
-  const { data: enrollments } = await supabase
-    .from("enrollments")
-    .select("*, course:courses(*)")
-    .eq("student_id", student.id);
+  const enrollmentsWithCourse = await db.query.enrollments.findMany({
+    where: eq(schema.enrollments.studentId, studentId),
+    with: { course: true },
+  });
 
-  const { data: allCourses } = await supabase.from("courses").select("*");
-
-  if (!enrollments || !allCourses) return;
+  const allCourses = await db.select().from(schema.courses);
 
   const generatedAlerts = generateAlerts({
-    enrollments: enrollments.map((e) => ({
-      ...e,
+    enrollments: enrollmentsWithCourse.map((e) => ({
+      status: e.status,
+      grade: e.grade,
+      term: e.term,
+      school_year: e.schoolYear,
       course: {
-        ...e.course!,
+        code: e.course!.code,
+        title: e.course!.title,
+        units: e.course!.units,
         prerequisites: e.course!.prerequisites ?? [],
       },
     })),
     allCourses: allCourses.map((c) => ({
-      ...c,
+      code: c.code,
+      title: c.title,
+      units: c.units,
       prerequisites: c.prerequisites ?? [],
     })),
     currentTerm: "Term 3",
     currentSchoolYear: "SY 2025-26",
   });
 
-  await supabase
-    .from("alerts")
-    .delete()
-    .eq("student_id", student.id)
-    .eq("dismissed", false);
+  await db
+    .delete(schema.alerts)
+    .where(
+      and(
+        eq(schema.alerts.studentId, studentId),
+        eq(schema.alerts.dismissed, false)
+      )
+    );
 
   if (generatedAlerts.length > 0) {
-    await supabase.from("alerts").insert(
-      generatedAlerts.map((a) => ({ ...a, student_id: student.id }))
+    await db.insert(schema.alerts).values(
+      generatedAlerts.map((a) => ({
+        studentId,
+        type: a.type,
+        title: a.title,
+        message: a.message,
+        severity: a.severity,
+        dueDate: a.due_date,
+      }))
     );
   }
 
@@ -53,10 +65,9 @@ export async function refreshAlerts() {
 }
 
 export async function dismissAlert(alertId: string) {
-  const supabase = await createClient();
-  await supabase
-    .from("alerts")
-    .update({ dismissed: true })
-    .eq("id", alertId);
+  await db
+    .update(schema.alerts)
+    .set({ dismissed: true })
+    .where(eq(schema.alerts.id, alertId));
   updateTag("alerts");
 }
