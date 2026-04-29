@@ -231,6 +231,45 @@ export const agentActions = pgTable(
   })
 );
 
+export const agentConversations = pgTable(
+  "agent_conversations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    studentId: uuid("student_id")
+      .notNull()
+      .references(() => students.id, { onDelete: "cascade" }),
+    title: text("title"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+    lastMessageAt: timestamp("last_message_at", { withTimezone: true }),
+  },
+  (t) => ({
+    studentLastMsgIdx: index("agent_conversations_student_idx").on(
+      t.studentId,
+      t.lastMessageAt
+    ),
+  })
+);
+
+export const agentMessages = pgTable(
+  "agent_messages",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    conversationId: uuid("conversation_id")
+      .notNull()
+      .references(() => agentConversations.id, { onDelete: "cascade" }),
+    role: text("role", { enum: ["user", "assistant", "system", "tool"] }).notNull(),
+    partsJsonb: jsonb("parts_jsonb").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    conversationCreatedIdx: index("agent_messages_conversation_idx").on(
+      t.conversationId,
+      t.createdAt
+    ),
+  })
+);
+
 // Inferred select/insert types for ergonomic use elsewhere
 export type Student = typeof students.$inferSelect;
 export type NewStudent = typeof students.$inferInsert;
@@ -243,6 +282,10 @@ export type AgentRun = typeof agentRuns.$inferSelect;
 export type NewAgentRun = typeof agentRuns.$inferInsert;
 export type AgentAction = typeof agentActions.$inferSelect;
 export type NewAgentAction = typeof agentActions.$inferInsert;
+export type AgentConversation = typeof agentConversations.$inferSelect;
+export type NewAgentConversation = typeof agentConversations.$inferInsert;
+export type AgentMessage = typeof agentMessages.$inferSelect;
+export type NewAgentMessage = typeof agentMessages.$inferInsert;
 
 // ---------- Relations (for Drizzle relational queries) ----------
 
@@ -258,4 +301,16 @@ export const tasksRelations = relations(tasks, ({ one }) => ({
 
 export const alertsRelations = relations(alerts, ({ one }) => ({
   student: one(students, { fields: [alerts.studentId], references: [students.id] }),
+}));
+
+export const agentConversationsRelations = relations(agentConversations, ({ many, one }) => ({
+  student: one(students, { fields: [agentConversations.studentId], references: [students.id] }),
+  messages: many(agentMessages),
+}));
+
+export const agentMessagesRelations = relations(agentMessages, ({ one }) => ({
+  conversation: one(agentConversations, {
+    fields: [agentMessages.conversationId],
+    references: [agentConversations.id],
+  }),
 }));
