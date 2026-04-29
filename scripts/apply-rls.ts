@@ -6,10 +6,18 @@ async function main() {
   if (!url) throw new Error("DATABASE_URL not set");
 
   const sqlText = readFileSync("drizzle/0001_rls_policies.sql", "utf-8");
+  // Strip leading comment-only lines from each candidate, then drop empties.
+  // A statement that begins with a `--` comment but has SQL on later lines is kept.
   const statements = sqlText
     .split(/;\s*\n/)
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0 && !s.startsWith("--"));
+    .map((s) =>
+      s
+        .split("\n")
+        .filter((line) => !line.trim().startsWith("--"))
+        .join("\n")
+        .trim()
+    )
+    .filter((s) => s.length > 0);
 
   const client = new Client(url);
   await client.connect();
