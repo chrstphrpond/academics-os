@@ -1,17 +1,20 @@
 import { generateObject } from "ai";
 import { eq } from "drizzle-orm";
 import { schema } from "@/lib/db";
-import { withAuth } from "@/lib/db/auth";
+import { withExplicitAuth } from "@/lib/db/auth";
 import { model } from "@/lib/ai/vertex";
 import { MODELS, FEATURES } from "@/lib/ai/models";
 import { gatherBriefingData } from "./data";
 import { buildBriefingPrompt, BRIEFING_SYSTEM_PROMPT } from "./prompt";
 import { BriefingSchema, type Briefing } from "./schema";
 
-export async function generateBriefing(studentId: string): Promise<Briefing> {
+export async function generateBriefing(
+  studentId: string,
+  clerkUserId: string
+): Promise<Briefing> {
   const [data, runId] = await Promise.all([
-    gatherBriefingData(studentId),
-    withAuth(async (tx) => {
+    gatherBriefingData(studentId, clerkUserId),
+    withExplicitAuth(clerkUserId, async (tx) => {
       const inserted = await tx
         .insert(schema.agentRuns)
         .values({
@@ -37,7 +40,7 @@ export async function generateBriefing(studentId: string): Promise<Briefing> {
     | { inputTokens?: number; outputTokens?: number }
     | undefined;
 
-  await withAuth(async (tx) => {
+  await withExplicitAuth(clerkUserId, async (tx) => {
     await tx
       .update(schema.agentRuns)
       .set({

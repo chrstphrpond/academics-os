@@ -15,7 +15,9 @@ export type FeatureFlag =
 export async function isFlagEnabled(flag: FeatureFlag): Promise<boolean> {
   const store = await cookies();
   const raw = store.get("ff")?.value ?? "";
-  for (const entry of raw.split(";")) {
+  // Accept both `,` and `;` as separators; `;` is awkward to set via
+  // `document.cookie` (it's the attribute delimiter), so prefer `,` in docs.
+  for (const entry of raw.split(/[,;]/)) {
     const [name, value] = entry.split("=");
     if (name?.trim() === flag && value?.trim() === "1") return true;
   }

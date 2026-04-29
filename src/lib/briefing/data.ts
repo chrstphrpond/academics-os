@@ -1,6 +1,6 @@
 import { and, desc, eq } from "drizzle-orm";
 import { schema } from "@/lib/db";
-import { withAuth } from "@/lib/db/auth";
+import { withExplicitAuth } from "@/lib/db/auth";
 import { getUpcomingEvents, type CalendarEvent } from "@/lib/academic-calendar";
 
 export interface EnrollmentSnapshot {
@@ -47,8 +47,11 @@ function pickCurrentTerm(
   return { term: latest.term, schoolYear: latest.schoolYear };
 }
 
-export async function gatherBriefingData(studentId: string): Promise<BriefingData> {
-  const [enrollments, activeAlerts, openTasks] = await withAuth(async (tx) => {
+export async function gatherBriefingData(
+  studentId: string,
+  clerkUserId: string
+): Promise<BriefingData> {
+  const [enrollments, activeAlerts, openTasks] = await withExplicitAuth(clerkUserId, async (tx) => {
     const e = tx.query.enrollments.findMany({
       where: eq(schema.enrollments.studentId, studentId),
       with: { course: true },

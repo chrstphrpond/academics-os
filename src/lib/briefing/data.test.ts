@@ -9,14 +9,15 @@ const { txQueryEnrollments, txQueryAlerts, txQueryTasks, getUpcomingEventsMock }
   }));
 
 vi.mock("@/lib/db/auth", () => ({
-  withAuth: vi.fn(async (cb: (tx: unknown) => Promise<unknown>) =>
-    cb({
-      query: {
-        enrollments: { findMany: txQueryEnrollments },
-        alerts: { findMany: txQueryAlerts },
-        tasks: { findMany: txQueryTasks },
-      },
-    })
+  withExplicitAuth: vi.fn(
+    async (_userId: string, cb: (tx: unknown) => Promise<unknown>) =>
+      cb({
+        query: {
+          enrollments: { findMany: txQueryEnrollments },
+          alerts: { findMany: txQueryAlerts },
+          tasks: { findMany: txQueryTasks },
+        },
+      })
   ),
 }));
 
@@ -81,7 +82,7 @@ describe("gatherBriefingData", () => {
   });
 
   it("fetches enrollments, alerts, tasks, and calendar in parallel", async () => {
-    const result = await gatherBriefingData("student-1");
+    const result = await gatherBriefingData("student-1", "user_test");
 
     expect(result.enrollments).toHaveLength(2);
     expect(result.activeAlerts).toHaveLength(1);
@@ -91,7 +92,7 @@ describe("gatherBriefingData", () => {
   });
 
   it("identifies the current term as the most recent in_progress enrollment", async () => {
-    const result = await gatherBriefingData("student-1");
+    const result = await gatherBriefingData("student-1", "user_test");
     expect(result.currentTerm).toEqual({ term: "Term 3", schoolYear: "SY 2025-26" });
   });
 
@@ -105,7 +106,7 @@ describe("gatherBriefingData", () => {
         course: { code: "MO-MATH035", title: "Math in Modern World", units: 3 },
       },
     ]);
-    const result = await gatherBriefingData("student-1");
+    const result = await gatherBriefingData("student-1", "user_test");
     expect(result.currentTerm).toEqual({ term: "Term 2", schoolYear: "SY 2025-26" });
   });
 });

@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { getCurrentStudentId } from "@/lib/db/auth";
 import { getCachedBriefing } from "@/lib/briefing/cache";
 import { BriefingHeadline } from "./briefing-headline";
@@ -10,14 +11,25 @@ import { RefreshButton } from "./refresh-button";
 import type { Briefing } from "@/lib/briefing/schema";
 
 export async function BriefingHero() {
-  const studentId = await getCurrentStudentId();
-  if (!studentId) {
+  // Resolve dynamic auth APIs OUTSIDE the cached call — Cache Components
+  // forbid auth()/headers()/cookies() inside `'use cache'`.
+  const [studentId, { userId: clerkUserId }] = await Promise.all([
+    getCurrentStudentId(),
+    auth(),
+  ]);
+  // In dev with DISABLE_AUTH=1 there's no Clerk session but getCurrentStudentId
+  // resolves via the dev fallback; pass a deterministic placeholder so the
+  // RLS context still evaluates.
+  const effectiveClerkUserId =
+    clerkUserId ?? (studentId ? `dev-${studentId}` : null);
+
+  if (!studentId || !effectiveClerkUserId) {
     return <BriefingError message="Sign in to see your briefing." />;
   }
 
   let briefing: Briefing;
   try {
-    briefing = await getCachedBriefing(studentId);
+    briefing = await getCachedBriefing(studentId, effectiveClerkUserId);
   } catch (err) {
     return (
       <BriefingError

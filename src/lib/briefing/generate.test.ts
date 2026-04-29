@@ -14,15 +14,16 @@ vi.mock("@/lib/ai/vertex", () => ({ model: (k: string) => ({ providerKey: k }) }
 vi.mock("@/lib/briefing/data", () => ({ gatherBriefingData: dataMock }));
 
 vi.mock("@/lib/db/auth", () => ({
-  withAuth: vi.fn(async (cb: (tx: unknown) => Promise<unknown>) =>
-    cb({
-      insert: () => ({
-        values: () => ({ returning: txInsertReturning }),
-      }),
-      update: () => ({
-        set: () => ({ where: txUpdateWhere }),
-      }),
-    })
+  withExplicitAuth: vi.fn(
+    async (_userId: string, cb: (tx: unknown) => Promise<unknown>) =>
+      cb({
+        insert: () => ({
+          values: () => ({ returning: txInsertReturning }),
+        }),
+        update: () => ({
+          set: () => ({ where: txUpdateWhere }),
+        }),
+      })
   ),
 }));
 
@@ -57,13 +58,13 @@ describe("generateBriefing", () => {
   });
 
   it("returns the parsed Briefing object", async () => {
-    const result = await generateBriefing("student-1");
+    const result = await generateBriefing("student-1", "user_test");
     expect(result.headline).toBe("All clear today");
     expect(result.bullets.length).toBeGreaterThan(0);
   });
 
   it("calls generateObject with the briefing schema and the gemini-2.5-pro model", async () => {
-    await generateBriefing("student-1");
+    await generateBriefing("student-1", "user_test");
     expect(generateObjectMock).toHaveBeenCalledOnce();
     const args = generateObjectMock.mock.calls[0][0] as Record<string, unknown>;
     expect(args.model).toEqual({ providerKey: "pro" });
@@ -83,6 +84,6 @@ describe("generateBriefing", () => {
       },
       usage: { inputTokens: 100, outputTokens: 10 },
     });
-    await expect(generateBriefing("student-1")).rejects.toThrow(/briefing/i);
+    await expect(generateBriefing("student-1", "user_test")).rejects.toThrow(/briefing/i);
   });
 });

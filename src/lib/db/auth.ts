@@ -29,12 +29,44 @@ type Tx = Parameters<Parameters<ReturnType<typeof getInstance>["transaction"]>[0
  * reference tables (courses, knowledge_chunks), use the plain HTTP `db` from
  * `@/lib/db` instead.
  */
-export async function withAuth<T>(fn: (tx: Tx) => Promise<T>): Promise<T> {
-  const { userId } = await auth();
-  if (!userId) throw new Error("withAuth: no authenticated Clerk user");
+// DEV ONLY: when DISABLE_AUTH=1, treat every request as if it came from the
+// student row matching DEV_DEFAULT_ROLL_NUMBER (default: 2024370558). This
+// lets Playwright and other smoke harnesses exercise the full app without
+// running through Clerk's hosted sign-in flow.
+async function devUserIdOrNull(): Promise<string | null> {
+  if (process.env.DISABLE_AUTH !== "1") return null;
+  const roll = process.env.DEV_DEFAULT_ROLL_NUMBER ?? "2024370558";
+  const rows = await getInstance()
+    .select({ clerkUserId: schema.students.clerkUserId })
+    .from(schema.students)
+    .where(sql`roll_number = ${roll}`)
+    .limit(1);
+  return rows[0]?.clerkUserId ?? `dev-${roll}`;
+}
 
+export async function withAuth<T>(fn: (tx: Tx) => Promise<T>): Promise<T> {
+  let { userId } = await auth();
+  if (!userId) {
+    userId = await devUserIdOrNull();
+  }
+  if (!userId) throw new Error("withAuth: no authenticated Clerk user");
+  return withExplicitAuth(userId, fn);
+}
+
+/**
+ * Variant of `withAuth` that takes the Clerk user id explicitly instead of
+ * reading it from Clerk's request-scoped `auth()`. Use this when the calling
+ * context cannot access dynamic request APIs — e.g. inside a `'use cache'`
+ * function. Resolve the user id outside the cache, then pass it in.
+ */
+export async function withExplicitAuth<T>(
+  clerkUserId: string,
+  fn: (tx: Tx) => Promise<T>
+): Promise<T> {
   return getInstance().transaction(async (tx) => {
-    await tx.execute(sql`SELECT set_config('app.clerk_user_id', ${userId}, true)`);
+    await tx.execute(
+      sql`SELECT set_config('app.clerk_user_id', ${clerkUserId}, true)`
+    );
     return fn(tx);
   });
 }
@@ -44,7 +76,10 @@ export async function withAuth<T>(fn: (tx: Tx) => Promise<T>): Promise<T> {
  * Uses the auth-aware client; safe inside RLS policies that depend on the same setting.
  */
 export async function getCurrentStudentId(): Promise<string | null> {
-  const { userId } = await auth();
+  let { userId } = await auth();
+  if (!userId) {
+    userId = await devUserIdOrNull();
+  }
   if (!userId) return null;
   const rows = await getInstance()
     .select({ id: schema.students.id })
