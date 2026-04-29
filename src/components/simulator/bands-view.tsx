@@ -3,7 +3,7 @@
 import {
   bandStatusFor,
   type ScholarshipBand,
-} from "@/lib/simulator/scholarships";
+} from "@/lib/simulator/scholarship-status";
 
 export interface BandsViewProps {
   baselineGpa: number;

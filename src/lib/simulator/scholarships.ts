@@ -1,14 +1,14 @@
 import { asc } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 
-export interface ScholarshipBand {
-  id: string;
-  name: string;
-  minGpa: string;
-  maxGpa: string;
-  note: string | null;
-  sourceChunkId: string | null;
-}
+// Re-export the client-safe types + helper so callers only need this module.
+export {
+  type ScholarshipBand,
+  type BandStatus,
+  bandStatusFor,
+} from "./scholarship-status";
+
+import type { ScholarshipBand } from "./scholarship-status";
 
 export async function listScholarshipBands(): Promise<ScholarshipBand[]> {
   return db
@@ -24,22 +24,3 @@ export async function listScholarshipBands(): Promise<ScholarshipBand[]> {
     .orderBy(asc(schema.scholarships.minGpa));
 }
 
-export interface BandStatus {
-  band: ScholarshipBand;
-  inBand: boolean;
-  /** Negative means above (worse than) the band; positive means below the floor. */
-  gapToFloor: number;
-}
-
-export function bandStatusFor(
-  gpa: number,
-  bands: ScholarshipBand[]
-): BandStatus[] {
-  return bands.map((b) => {
-    const min = parseFloat(b.minGpa);
-    const max = parseFloat(b.maxGpa);
-    const inBand = gpa >= min && gpa <= max;
-    const gapToFloor = parseFloat((max - gpa).toFixed(2));
-    return { band: b, inBand, gapToFloor };
-  });
-}
