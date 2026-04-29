@@ -2,90 +2,73 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  LayoutDashboard,
-  Map,
-  GraduationCap,
-  Bell,
-  BookOpen,
-  CheckSquare,
-} from "lucide-react";
-
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarFooter,
-} from "@/components/ui/sidebar";
-
-const navItems = [
-  { title: "Dashboard", href: "/", icon: LayoutDashboard },
-  { title: "Progress", href: "/progress", icon: Map },
-  { title: "Grades", href: "/grades", icon: GraduationCap },
-  { title: "Alerts", href: "/alerts", icon: Bell },
-  { title: "Knowledge", href: "/knowledge", icon: BookOpen },
-  { title: "Tasks", href: "/tasks", icon: CheckSquare },
-];
+import * as Icons from "lucide-react";
+import { NAV_ITEMS } from "@/lib/constants";
+import { cn } from "@/lib/utils";
+import { UserButton } from "@clerk/nextjs";
+import type { LucideIcon } from "lucide-react";
 
 export function AppSidebar() {
   const pathname = usePathname();
 
   return (
-    <Sidebar>
-      <SidebarHeader className="border-b border-sidebar-border px-4 py-4">
-        <Link href="/" className="flex items-center gap-2.5">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 ring-1 ring-primary/20">
-            <GraduationCap className="h-4 w-4 text-primary" />
+    <aside className="hidden h-svh flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground md:flex md:w-12 lg:w-60">
+      <div className="flex h-12 items-center border-b border-sidebar-border px-3 lg:px-4">
+        <span className="hidden text-sm font-semibold tracking-tight text-sidebar-foreground lg:inline">
+          academics
+        </span>
+        <span className="text-sm font-semibold tracking-tight text-sidebar-foreground lg:hidden">
+          a
+        </span>
+      </div>
+
+      <nav className="flex flex-1 flex-col gap-0.5 p-2">
+        {NAV_ITEMS.map((item) => {
+          const isActive =
+            item.href === "/"
+              ? pathname === "/"
+              : pathname.startsWith(item.href);
+          const Icon =
+            (Icons as unknown as Record<string, LucideIcon>)[item.icon] ??
+            Icons.Square;
+
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "relative flex h-8 items-center gap-3 rounded-md px-2.5 text-sm font-medium transition-colors",
+                isActive
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                  : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+              )}
+            >
+              {isActive && (
+                <span
+                  aria-hidden
+                  className="absolute left-0 top-1.5 h-5 w-0.5 rounded-r bg-sidebar-primary"
+                />
+              )}
+              <Icon className="h-4 w-4 shrink-0" />
+              <span className="hidden lg:inline">{item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
+
+      <div className="flex items-center gap-3 border-t border-sidebar-border px-3 py-3">
+        <UserButton
+          appearance={{
+            elements: { userButtonAvatarBox: "h-7 w-7" },
+          }}
+        />
+        <div className="hidden min-w-0 text-xs text-sidebar-foreground/70 lg:block">
+          <div className="truncate font-medium text-sidebar-foreground">
+            My Account
           </div>
-          <span className="text-sm font-semibold tracking-tight">Academics OS</span>
-        </Link>
-      </SidebarHeader>
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {navItems.map((item) => {
-                const isActive =
-                  item.href === "/"
-                    ? pathname === "/"
-                    : pathname.startsWith(item.href);
-                return (
-                  <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton
-                      isActive={isActive}
-                      className={
-                        isActive
-                          ? "bg-white/[0.06] border-l-2 border-l-indigo-500 hover:bg-white/[0.08]"
-                          : "hover:bg-white/[0.04]"
-                      }
-                      render={<Link href={item.href} />}
-                    >
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                      {item.title === "Alerts" && (
-                        <span className="ml-auto h-2 w-2 rounded-full bg-destructive" />
-                      )}
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-      <SidebarFooter className="border-t border-sidebar-border px-4 py-3">
-        <div className="text-xs text-muted-foreground">
-          <p className="font-medium text-sidebar-foreground text-sm">Christopher Pond</p>
-          <p>2024370558 · BSIT</p>
+          <div className="truncate">2024370558 · BSIT</div>
         </div>
-      </SidebarFooter>
-    </Sidebar>
+      </div>
+    </aside>
   );
 }
