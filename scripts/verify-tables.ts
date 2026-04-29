@@ -8,8 +8,8 @@ async function main() {
   ]);
   console.log(
     JSON.stringify({
-      tables: tables.map((x: any) => x.tablename),
-      rls: rls.map((x: any) => x.tablename),
+      tables: tables.map((x) => (x as { tablename: string }).tablename),
+      rls: rls.map((x) => (x as { tablename: string }).tablename),
     })
   );
 }
