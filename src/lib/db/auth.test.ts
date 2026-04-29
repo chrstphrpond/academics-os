@@ -4,7 +4,11 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 process.env.DATABASE_URL = "postgresql://test:test@localhost/test";
 
 const txExecute = vi.fn(async () => {});
-const transaction = vi.fn(async (cb: any) =>
+type MockTx = {
+  execute: ReturnType<typeof vi.fn>;
+  select: () => { from: () => { where: () => { limit: () => Promise<{ id: string }[]> } } };
+};
+const transaction = vi.fn(async (cb: (tx: MockTx) => Promise<unknown>) =>
   cb({
     execute: txExecute,
     select: () => ({

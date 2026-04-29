@@ -71,7 +71,7 @@ describe("runVertex", () => {
     expect(result.text).toBe("ok");
 
     expect(dbInsert).toHaveBeenCalledOnce();
-    const inserted = (insertValues as any).mock.calls[0][0];
+    const inserted = (insertValues.mock.calls[0] as unknown as [Record<string, unknown>])[0];
     expect(inserted).toMatchObject({
       studentId: "student-1",
       feature: "test",
@@ -84,7 +84,7 @@ describe("runVertex", () => {
     expect(callArgs.model).toEqual({ providerKey: "flash" });
 
     expect(dbUpdate).toHaveBeenCalledOnce();
-    const updateArgs = (updateSet as any).mock.calls[0][0];
+    const updateArgs = (updateSet.mock.calls[0] as unknown as [Record<string, unknown>])[0];
     expect(updateArgs.inputTokens).toBe(10);
     expect(updateArgs.outputTokens).toBe(5);
     expect(typeof updateArgs.latencyMs).toBe("number");
@@ -100,7 +100,7 @@ describe("runVertex", () => {
     });
 
     expect(result.text).toBe("ok");
-    const inserted = (insertValues as any).mock.calls[0][0];
+    const inserted = (insertValues.mock.calls[0] as unknown as [Record<string, unknown>])[0];
     expect(inserted.studentId).toBeNull();
   });
 
