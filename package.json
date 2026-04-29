@@ -13,6 +13,7 @@
     "seed:all": "pnpm seed:courses && pnpm seed:transcript && pnpm seed:knowledge",
     "db:generate": "dotenv -e .env.local -- drizzle-kit generate",
     "db:push": "dotenv -e .env.local -- drizzle-kit push",
+    "db:apply-rls": "dotenv -e .env.local -- tsx scripts/apply-rls.ts",
     "db:studio": "dotenv -e .env.local -- drizzle-kit studio",
     "db:prep": "dotenv -e .env.local -- tsx scripts/db-prep.ts",
     "backfill:clerk": "dotenv -e .env.local -- tsx scripts/backfill-clerk-user-id.ts",
