@@ -16,6 +16,9 @@ import {
   GpaSimulator,
   type AvailableCourse,
 } from "@/components/grades/gpa-simulator";
+import { isFlagEnabled } from "@/lib/feature-flags";
+import { SimulatorPanel } from "@/components/simulator/simulator-panel";
+import { listScholarshipBands } from "@/lib/simulator/scholarships";
 import { FadeIn } from "@/components/ui/animated";
 import { GradesSkeleton } from "@/components/ui/skeleton-cards";
 import { TranscriptUpload } from "@/components/grades/transcript-upload";
@@ -111,6 +114,11 @@ async function GradesContent() {
     .filter((c) => !enrolledCourseIds.has(c.id))
     .map((c) => ({ code: c.code, title: c.title, units: c.units }));
 
+  const [simOn, bands] = await Promise.all([
+    isFlagEnabled("feature.simulator"),
+    listScholarshipBands(),
+  ]);
+
   return (
     <>
       {/* Charts row */}
@@ -125,10 +133,19 @@ async function GradesContent() {
           <h2 className="text-lg font-semibold mb-3">Course Grades</h2>
           <CourseTable courses={courseRows} />
         </div>
-        <GpaSimulator
-          currentEnrollments={enrollmentsWithCourse}
-          availableCourses={availableCourses}
-        />
+        {simOn ? (
+          <SimulatorPanel
+            enrollments={enrollmentsWithCourse}
+            upcomingCourses={availableCourses}
+            bands={bands}
+            termHint="Term 3 SY 2025-26"
+          />
+        ) : (
+          <GpaSimulator
+            currentEnrollments={enrollmentsWithCourse}
+            availableCourses={availableCourses}
+          />
+        )}
       </div>
     </>
   );
