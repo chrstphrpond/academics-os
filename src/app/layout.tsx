@@ -1,4 +1,6 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
+import { ClerkProvider } from "@clerk/nextjs";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { ThemeProvider } from "next-themes";
@@ -35,6 +37,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
+    <ClerkProvider>
     <html
       lang="en"
       suppressHydrationWarning
@@ -55,7 +58,9 @@ export default function RootLayout({
         >
           <TooltipProvider>
             <SidebarProvider>
-              <AppSidebar />
+              <Suspense fallback={null}>
+                <AppSidebar />
+              </Suspense>
               <SidebarInset>
                 <TopBar />
                 <main id="main-content" className="flex-1 overflow-auto p-6 pb-16 md:pb-0">{children}</main>
@@ -64,9 +69,12 @@ export default function RootLayout({
           </TooltipProvider>
           <Toaster />
           <CommandPalette />
-          <BottomNav />
+          <Suspense fallback={null}>
+            <BottomNav />
+          </Suspense>
         </ThemeProvider>
       </body>
     </html>
+    </ClerkProvider>
   );
 }

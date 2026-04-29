@@ -34,6 +34,14 @@ yarn-error.log*
 .env*
 .env.local
 
+# service account keys (never commit)
+*-*.json
+!components.json
+!tsconfig*.json
+!package*.json
+!pnpm-*.json
+!**/database.types.json
+
 # data
 data/handbook.txt
 
@@ -49,3 +57,13 @@ next-env.d.ts
 screenshots/
 .superpowers/
 design-system/
+.env*.local
+.claude/
+dashboard-*.png
+screenshots/
+# Playwright/dev screenshots dropped at repo root
+*-mcp.png
+atlas-*.png
+e2e-*.png
+sidebar-*.png
+p3-*.png

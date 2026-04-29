@@ -1,22 +1,44 @@
 import { Suspense } from "react";
-import { createClient } from "@/lib/supabase/server";
+import { schema } from "@/lib/db";
+import { withAuth, getCurrentStudentId } from "@/lib/db/auth";
+import { eq, desc } from "drizzle-orm";
 import { AlertList } from "@/components/alerts/alert-list";
 import { RefreshButton } from "@/components/alerts/refresh-button";
 import { PageHeader } from "@/components/ui/animated";
 import { AlertsSkeleton } from "@/components/ui/skeleton-cards";
 
 async function AlertsContent() {
-  const supabase = await createClient();
+  const studentId = await getCurrentStudentId();
+
+  const rows = studentId
+    ? await withAuth(async (tx) =>
+        tx
+          .select({
+            id: schema.alerts.id,
+            title: schema.alerts.title,
+            message: schema.alerts.message,
+            severity: schema.alerts.severity,
+            createdAt: schema.alerts.createdAt,
+            dueDate: schema.alerts.dueDate,
+          })
+          .from(schema.alerts)
+          .where(eq(schema.alerts.dismissed, false))
+          .orderBy(desc(schema.alerts.createdAt))
+      )
+    : [];
 
   const severityOrder = ["critical", "warning", "info"];
 
-  const { data: alerts } = await supabase
-    .from("alerts")
-    .select("id, title, message, severity, created_at, due_date")
-    .eq("dismissed", false)
-    .order("created_at", { ascending: false });
+  const alerts = rows.map((r) => ({
+    id: r.id,
+    title: r.title,
+    message: r.message,
+    severity: r.severity,
+    created_at: r.createdAt ? r.createdAt.toISOString() : null,
+    due_date: r.dueDate ?? null,
+  }));
 
-  const sortedAlerts = (alerts ?? []).sort(
+  const sortedAlerts = alerts.sort(
     (a, b) =>
       severityOrder.indexOf(a.severity) - severityOrder.indexOf(b.severity)
   );

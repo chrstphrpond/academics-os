@@ -1,35 +1,42 @@
 "use server";
 
 import { updateTag } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { schema } from "@/lib/db";
+import { withAuth, getCurrentStudentId } from "@/lib/db/auth";
+import { eq } from "drizzle-orm";
 
 export async function createTask(formData: FormData) {
-  const supabase = await createClient();
-  const { data: student } = await supabase
-    .from("students")
-    .select("id")
-    .single();
-  if (!student) return;
+  const studentId = await getCurrentStudentId();
+  if (!studentId) return;
 
-  await supabase.from("tasks").insert({
-    student_id: student.id,
-    title: formData.get("title") as string,
-    description: (formData.get("description") as string) || null,
-    due_date: (formData.get("due_date") as string) || null,
-    course_id: (formData.get("course_id") as string) || null,
+  const courseIdRaw = formData.get("course_id") as string | null;
+
+  await withAuth(async (tx) => {
+    await tx.insert(schema.tasks).values({
+      studentId,
+      title: formData.get("title") as string,
+      description: (formData.get("description") as string) || null,
+      dueDate: (formData.get("due_date") as string) || null,
+      courseId: courseIdRaw || null,
+    });
   });
 
   updateTag("tasks");
 }
 
 export async function toggleTask(taskId: string, completed: boolean) {
-  const supabase = await createClient();
-  await supabase.from("tasks").update({ completed }).eq("id", taskId);
+  await withAuth(async (tx) => {
+    await tx
+      .update(schema.tasks)
+      .set({ completed })
+      .where(eq(schema.tasks.id, taskId));
+  });
   updateTag("tasks");
 }
 
 export async function deleteTask(taskId: string) {
-  const supabase = await createClient();
-  await supabase.from("tasks").delete().eq("id", taskId);
+  await withAuth(async (tx) => {
+    await tx.delete(schema.tasks).where(eq(schema.tasks.id, taskId));
+  });
   updateTag("tasks");
 }

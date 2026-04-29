@@ -1,5 +1,7 @@
 import { Suspense } from "react";
-import { createClient } from "@/lib/supabase/server";
+import { db, schema } from "@/lib/db";
+import { withAuth, getCurrentStudentId } from "@/lib/db/auth";
+import { eq, asc } from "drizzle-orm";
 import { ProgressContent } from "@/components/progress/progress-content";
 import { OptimalPath } from "@/components/progress/optimal-path";
 import { PageHeader } from "@/components/ui/animated";
@@ -10,22 +12,36 @@ import type { CourseStatus } from "@/lib/types";
 import type { CourseWithStatus } from "@/components/progress/types";
 
 async function ProgressData() {
-  const supabase = await createClient();
+  const studentId = await getCurrentStudentId();
 
-  // Fetch all courses ordered by year then term
-  const { data: courses } = await supabase
-    .from("courses")
-    .select("id, code, title, units, type, year, term, prerequisites")
-    .order("year")
-    .order("term");
+  // Fetch all courses ordered by year then term — reference table, safe on plain db
+  const allCourses = await db
+    .select({
+      id: schema.courses.id,
+      code: schema.courses.code,
+      title: schema.courses.title,
+      units: schema.courses.units,
+      type: schema.courses.type,
+      year: schema.courses.year,
+      term: schema.courses.term,
+      prerequisites: schema.courses.prerequisites,
+    })
+    .from(schema.courses)
+    .orderBy(asc(schema.courses.year), asc(schema.courses.term));
 
-  // Fetch all enrollments for the student (single-student app)
-  const { data: enrollments } = await supabase
-    .from("enrollments")
-    .select("course_id, status, grade");
-
-  const allCourses = courses ?? [];
-  const allEnrollments = enrollments ?? [];
+  // Fetch all enrollments for the student through withAuth
+  const allEnrollments = studentId
+    ? await withAuth(async (tx) =>
+        tx
+          .select({
+            course_id: schema.enrollments.courseId,
+            status: schema.enrollments.status,
+            grade: schema.enrollments.grade,
+          })
+          .from(schema.enrollments)
+          .where(eq(schema.enrollments.studentId, studentId))
+      )
+    : [];
 
   // Build enrollment lookup by course_id
   const enrollmentMap = new Map<string, { status: string; grade: string | null }>();

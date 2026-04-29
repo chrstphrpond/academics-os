@@ -1,12 +1,7 @@
-import { createClient } from "@supabase/supabase-js";
 import fs from "fs";
+import { db, schema } from "../src/lib/db/index";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "http://127.0.0.1:54321",
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ""
-);
-
-interface KnowledgeChunk {
+interface KnowledgeChunkInput {
   source: "faq" | "handbook";
   category: string | null;
   title: string;
@@ -37,9 +32,10 @@ function splitLongContent(content: string, maxLen: number = 2000): string[] {
   return chunks;
 }
 
-function parseFaq(content: string): KnowledgeChunk[] {
-  const sections = content.split("\n---\n");
-  const chunks: KnowledgeChunk[] = [];
+function parseFaq(content: string): KnowledgeChunkInput[] {
+  // Support both Unix (\n---\n) and Windows (\r\n---\r\n) line endings
+  const sections = content.split(/\r?\n---\r?\n/);
+  const chunks: KnowledgeChunkInput[] = [];
 
   for (const section of sections) {
     const trimmed = section.trim();
@@ -78,10 +74,10 @@ function parseFaq(content: string): KnowledgeChunk[] {
   return chunks;
 }
 
-function parseHandbook(content: string): KnowledgeChunk[] {
+function parseHandbook(content: string): KnowledgeChunkInput[] {
   // Split by Roman numeral section headers
   const sectionPattern = /^((?:I{1,3}|IV|V|VI{0,3}|IX|X{0,3})\.\s+.+)$/gm;
-  const chunks: KnowledgeChunk[] = [];
+  const chunks: KnowledgeChunkInput[] = [];
 
   const parts: Array<{ title: string; content: string }> = [];
 
@@ -137,7 +133,7 @@ async function main() {
   console.log(`Parsed ${faqChunks.length} FAQ chunks`);
 
   // Parse handbook
-  let handbookChunks: KnowledgeChunk[] = [];
+  let handbookChunks: KnowledgeChunkInput[] = [];
   try {
     const handbookContent = fs.readFileSync("data/handbook.txt", "utf-8");
     handbookChunks = parseHandbook(handbookContent);
@@ -148,28 +144,25 @@ async function main() {
 
   const allChunks = [...faqChunks, ...handbookChunks];
 
-  // Clear existing knowledge chunks
-  const { error: deleteError } = await supabase
-    .from("knowledge_chunks")
-    .delete()
-    .gte("created_at", "1970-01-01");
+  // Truncate existing chunks so re-runs are idempotent (no natural unique key on this table)
+  await db.delete(schema.knowledgeChunks);
+  console.log("Cleared existing knowledge_chunks");
 
-  if (deleteError) {
-    console.error("Error clearing knowledge_chunks:", deleteError.message);
-    process.exit(1);
-  }
-
-  // Insert in batches
+  // Insert in batches via Drizzle (embedding stays NULL — Phase 6 re-embeds with Vertex)
   const batchSize = 50;
   let inserted = 0;
   for (let i = 0; i < allChunks.length; i += batchSize) {
     const batch = allChunks.slice(i, i + batchSize);
-    const { error } = await supabase.from("knowledge_chunks").insert(batch);
-    if (error) {
-      console.error(`Error inserting batch at index ${i}:`, error.message);
-      console.error("Sample failed row:", JSON.stringify(batch[0], null, 2));
-      process.exit(1);
-    }
+    await db.insert(schema.knowledgeChunks).values(
+      batch.map((c) => ({
+        source: c.source,
+        category: c.category,
+        title: c.title,
+        content: c.content,
+        url: c.url,
+        // embedding omitted — DB defaults to NULL
+      }))
+    );
     inserted += batch.length;
   }
 

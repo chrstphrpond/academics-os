@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
+import { db, schema } from "@/lib/db";
+import { sql } from "drizzle-orm";
 import { ArticleList } from "@/components/knowledge/article-list";
 import { PageHeader } from "@/components/ui/animated";
 import { Button } from "@/components/ui/button";
@@ -34,13 +35,21 @@ export default async function CategoryPage({
   const title = category.replace(/-/g, " ");
   const searchTerms = categorySearchTerms[category] || category.replace(/-/g, " ");
 
-  const supabase = await createClient();
+  // Build FTS query using OR (|) for category page (matches any of the terms)
+  const tsQuery = searchTerms.split(" ").join(" | ");
 
-  // Search knowledge chunks matching this category
-  const { data: articles } = await supabase
-    .from("knowledge_chunks")
-    .select("id, title, content, url, source")
-    .textSearch("fts", searchTerms.split(" ").join(" | "), { type: "plain" })
+  const fts = sql`to_tsvector('english', ${schema.knowledgeChunks.title} || ' ' || ${schema.knowledgeChunks.content}) @@ to_tsquery('english', ${tsQuery})`;
+
+  const articles = await db
+    .select({
+      id: schema.knowledgeChunks.id,
+      title: schema.knowledgeChunks.title,
+      content: schema.knowledgeChunks.content,
+      url: schema.knowledgeChunks.url,
+      source: schema.knowledgeChunks.source,
+    })
+    .from(schema.knowledgeChunks)
+    .where(fts)
     .limit(30);
 
   return (
@@ -49,9 +58,9 @@ export default async function CategoryPage({
         <Button variant="ghost" size="icon" render={<Link href="/knowledge" />}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <PageHeader title={title} description={`${(articles ?? []).length} articles found`} />
+        <PageHeader title={title} description={`${articles.length} articles found`} />
       </div>
-      <ArticleList articles={articles ?? []} />
+      <ArticleList articles={articles} />
     </div>
   );
 }

@@ -1,11 +1,7 @@
 import { parse } from "csv-parse/sync";
-import { createClient } from "@supabase/supabase-js";
 import fs from "fs";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "http://127.0.0.1:54321",
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ""
-);
+import { eq } from "drizzle-orm";
+import { db, schema } from "../src/lib/db/index";
 
 function gradeToStatus(grade: string): string {
   if (!grade || grade.trim() === "") return "in_progress";
@@ -35,43 +31,37 @@ async function main() {
     skip_empty_lines: false,
   });
 
-  // Look up student
-  const { data: student, error: studentError } = await supabase
-    .from("students")
-    .select("id")
-    .eq("roll_number", "2024370558")
-    .single();
+  // Look up student by roll number
+  const studentRows = await db
+    .select()
+    .from(schema.students)
+    .where(eq(schema.students.rollNumber, "2024370558"))
+    .limit(1);
 
-  if (studentError || !student) {
-    console.error("Could not find student with roll_number 2024370558:", studentError?.message);
+  if (!studentRows.length) {
+    console.error("Could not find student with rollNumber 2024370558. Run seed:courses first.");
     process.exit(1);
   }
 
-  console.log(`Found student: ${student.id}`);
+  const student = studentRows[0];
+  console.log(`Found student: ${student.id} (${student.name})`);
 
   // Fetch all courses for lookup
-  const { data: allCourses, error: coursesError } = await supabase
-    .from("courses")
-    .select("id, code");
-
-  if (coursesError) {
-    console.error("Error fetching courses:", coursesError.message);
-    process.exit(1);
-  }
+  const allCourses = await db.select().from(schema.courses);
 
   const courseMap = new Map<string, string>();
-  for (const c of allCourses || []) {
+  for (const c of allCourses) {
     courseMap.set(c.code, c.id);
   }
 
-  // Parse transcript rows (skip header rows 0-6, data starts at row 7 = index 6 in 0-based)
+  // Parse transcript rows (data starts at row index 7, rows 0-6 are headers)
   const enrollments: Array<{
-    student_id: string;
-    course_id: string;
+    studentId: string;
+    courseId: string;
     term: string;
-    school_year: string;
+    schoolYear: string;
     grade: string | null;
-    status: string;
+    status: "passed" | "inc" | "drp" | "in_progress" | "failed";
   }> = [];
 
   const unmatchedCourses: string[] = [];
@@ -94,13 +84,14 @@ async function main() {
       continue;
     }
 
+    const status = gradeToStatus(grade);
     enrollments.push({
-      student_id: student.id,
-      course_id: courseId,
+      studentId: student.id,
+      courseId,
       term,
-      school_year,
+      schoolYear: school_year,
       grade: grade || null,
-      status: gradeToStatus(grade),
+      status: status as "passed" | "inc" | "drp" | "in_progress" | "failed",
     });
   }
 
@@ -111,24 +102,19 @@ async function main() {
     }
   }
 
-  // Clear existing enrollments for this student
-  const { error: deleteError } = await supabase
-    .from("enrollments")
-    .delete()
-    .gte("created_at", "1970-01-01");
-
-  if (deleteError) {
-    console.error("Error clearing enrollments:", deleteError.message);
-    process.exit(1);
-  }
-
-  // Insert enrollments
+  // Insert enrollments (idempotent via onConflictDoNothing on unique constraint)
   if (enrollments.length > 0) {
-    const { error } = await supabase.from("enrollments").insert(enrollments);
-    if (error) {
-      console.error("Error inserting enrollments:", error.message);
-      process.exit(1);
-    }
+    await db
+      .insert(schema.enrollments)
+      .values(enrollments)
+      .onConflictDoNothing({
+        target: [
+          schema.enrollments.studentId,
+          schema.enrollments.courseId,
+          schema.enrollments.term,
+          schema.enrollments.schoolYear,
+        ],
+      });
   }
 
   console.log(`\nSuccessfully seeded ${enrollments.length} enrollment records`);

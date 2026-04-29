@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1777436599358,
+      "tag": "0000_bouncy_deathbird",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1777444756500,
+      "tag": "0001_short_speed",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1777446938538,
+      "tag": "0002_faulty_preak",
+      "breakpoints": true
+    }
+  ]
+}

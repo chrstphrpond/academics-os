@@ -1,5 +1,7 @@
 import { Suspense } from "react";
-import { createClient } from "@/lib/supabase/server";
+import { db, schema } from "@/lib/db";
+import { withAuth, getCurrentStudentId } from "@/lib/db/auth";
+import { eq, asc } from "drizzle-orm";
 import { calculateTermGpas, type EnrollmentWithCourse } from "@/lib/gpa";
 import { GpaTrendChart } from "@/components/grades/gpa-trend-chart";
 import {
@@ -14,27 +16,42 @@ import {
   GpaSimulator,
   type AvailableCourse,
 } from "@/components/grades/gpa-simulator";
+import { isFlagEnabled } from "@/lib/feature-flags";
+import { SimulatorPanel } from "@/components/simulator/simulator-panel";
+import { listScholarshipBands } from "@/lib/simulator/scholarships";
 import { FadeIn } from "@/components/ui/animated";
 import { GradesSkeleton } from "@/components/ui/skeleton-cards";
 import { TranscriptUpload } from "@/components/grades/transcript-upload";
 
 async function GradesContent() {
-  const supabase = await createClient();
+  const studentId = await getCurrentStudentId();
 
-  // Fetch all enrollments with course data
-  const { data: enrollments } = await supabase
-    .from("enrollments")
-    .select("grade, status, term, school_year, course_id")
-    .order("school_year")
-    .order("term");
+  // Fetch all courses — reference table, safe on plain db
+  const allCourses = await db
+    .select({
+      id: schema.courses.id,
+      code: schema.courses.code,
+      title: schema.courses.title,
+      units: schema.courses.units,
+    })
+    .from(schema.courses);
 
-  // Fetch all courses
-  const { data: courses } = await supabase
-    .from("courses")
-    .select("id, code, title, units");
-
-  const allEnrollments = enrollments ?? [];
-  const allCourses = courses ?? [];
+  // Fetch enrollments through withAuth when we have a student
+  const allEnrollments = studentId
+    ? await withAuth(async (tx) =>
+        tx
+          .select({
+            grade: schema.enrollments.grade,
+            status: schema.enrollments.status,
+            term: schema.enrollments.term,
+            school_year: schema.enrollments.schoolYear,
+            course_id: schema.enrollments.courseId,
+          })
+          .from(schema.enrollments)
+          .where(eq(schema.enrollments.studentId, studentId))
+          .orderBy(asc(schema.enrollments.schoolYear), asc(schema.enrollments.term))
+      )
+    : [];
 
   // Build course lookup
   const courseMap = new Map(
@@ -43,18 +60,18 @@ async function GradesContent() {
 
   // Build EnrollmentWithCourse objects
   const enrollmentsWithCourse: EnrollmentWithCourse[] = allEnrollments
-    .map((e) => {
+    .flatMap((e) => {
       const course = courseMap.get(e.course_id);
-      if (!course) return null;
-      return {
+      if (!course) return [];
+      const row: EnrollmentWithCourse = {
         grade: e.grade,
-        status: e.status,
+        status: e.status as string,
         term: e.term,
         school_year: e.school_year,
         course,
       };
-    })
-    .filter((e): e is EnrollmentWithCourse => e !== null);
+      return [row];
+    });
 
   // Calculate term GPAs
   const termGpas = calculateTermGpas(enrollmentsWithCourse);
@@ -97,6 +114,11 @@ async function GradesContent() {
     .filter((c) => !enrolledCourseIds.has(c.id))
     .map((c) => ({ code: c.code, title: c.title, units: c.units }));
 
+  const [simOn, bands] = await Promise.all([
+    isFlagEnabled("feature.simulator"),
+    listScholarshipBands(),
+  ]);
+
   return (
     <>
       {/* Charts row */}
@@ -111,10 +133,19 @@ async function GradesContent() {
           <h2 className="text-lg font-semibold mb-3">Course Grades</h2>
           <CourseTable courses={courseRows} />
         </div>
-        <GpaSimulator
-          currentEnrollments={enrollmentsWithCourse}
-          availableCourses={availableCourses}
-        />
+        {simOn ? (
+          <SimulatorPanel
+            enrollments={enrollmentsWithCourse}
+            upcomingCourses={availableCourses}
+            bands={bands}
+            termHint="Term 3 SY 2025-26"
+          />
+        ) : (
+          <GpaSimulator
+            currentEnrollments={enrollmentsWithCourse}
+            availableCourses={availableCourses}
+          />
+        )}
       </div>
     </>
   );

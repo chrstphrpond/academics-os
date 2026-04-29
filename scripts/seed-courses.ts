@@ -1,11 +1,6 @@
 import { parse } from "csv-parse/sync";
-import { createClient } from "@supabase/supabase-js";
 import fs from "fs";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "http://127.0.0.1:54321",
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ""
-);
+import { db, schema } from "../src/lib/db/index";
 
 const YEAR_MAP: Record<string, number> = {
   "FIRST YEAR": 1,
@@ -39,6 +34,20 @@ function parseArrayField(raw: string): string[] {
 }
 
 async function main() {
+  // Upsert the student record first so transcript seed has a student_id to FK against
+  await db
+    .insert(schema.students)
+    .values({
+      name: "Christopher Pond Maquidato",
+      rollNumber: "2024370558",
+      degree: "Bachelor of Science in Information Technology",
+      specialization: "Network and Cybersecurity",
+      enrollmentStartTerm: "Term 3 SY 2024-25",
+    })
+    .onConflictDoNothing({ target: schema.students.rollNumber });
+
+  console.log("Upserted student: Christopher Pond Maquidato (2024370558)");
+
   const csvData = fs.readFileSync("data/curriculum.csv", "utf-8");
   const rows: string[][] = parse(csvData, {
     relax_column_count: true,
@@ -108,28 +117,13 @@ async function main() {
 
   console.log(`Parsed ${courses.length} courses from curriculum CSV`);
 
-  // Clear existing courses
-  const { error: deleteError } = await supabase.from("courses").delete().gte("created_at", "1970-01-01");
-  if (deleteError) {
-    console.error("Error clearing courses:", deleteError.message);
-    process.exit(1);
-  }
+  // Insert all courses (idempotent via onConflictDoNothing on unique code column)
+  const result = await db
+    .insert(schema.courses)
+    .values(courses)
+    .onConflictDoNothing({ target: schema.courses.code });
 
-  // Insert in batches
-  const batchSize = 50;
-  let inserted = 0;
-  for (let i = 0; i < courses.length; i += batchSize) {
-    const batch = courses.slice(i, i + batchSize);
-    const { error } = await supabase.from("courses").insert(batch);
-    if (error) {
-      console.error(`Error inserting batch at index ${i}:`, error.message);
-      console.error("Failed rows:", JSON.stringify(batch, null, 2));
-      process.exit(1);
-    }
-    inserted += batch.length;
-  }
-
-  console.log(`Successfully seeded ${inserted} courses`);
+  console.log(`Successfully seeded ${courses.length} courses (duplicates skipped)`);
 }
 
 main().catch((err) => {

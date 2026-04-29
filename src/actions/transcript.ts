@@ -1,7 +1,9 @@
 "use server";
 
 import { updateTag } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { db, schema } from "@/lib/db";
+import { withAuth, getCurrentStudentId } from "@/lib/db/auth";
+import { eq } from "drizzle-orm";
 
 function gradeToStatus(grade: string): string {
   if (!grade || grade.trim() === "") return "in_progress";
@@ -76,26 +78,16 @@ export async function uploadTranscript(formData: FormData) {
     return { success: false as const, error: "Could not find header row in CSV. Expected 'Term,Course Code,Course Title,Credits,Grade'" };
   }
 
-  const supabase = await createClient();
-
-  // Lookup student (single student app)
-  const { data: student, error: studentError } = await supabase
-    .from("students")
-    .select("id")
-    .single();
-
-  if (studentError || !student) {
+  // Lookup student
+  const studentId = await getCurrentStudentId();
+  if (!studentId) {
     return { success: false as const, error: "Could not find student record" };
   }
 
-  // Fetch all courses for lookup
-  const { data: allCourses, error: coursesError } = await supabase
-    .from("courses")
-    .select("id, code");
-
-  if (coursesError || !allCourses) {
-    return { success: false as const, error: "Could not fetch courses" };
-  }
+  // Fetch all courses for lookup — reference table, safe on plain db
+  const allCourses = await db
+    .select({ id: schema.courses.id, code: schema.courses.code })
+    .from(schema.courses);
 
   const courseMap = new Map<string, string>();
   for (const c of allCourses) {
@@ -104,12 +96,12 @@ export async function uploadTranscript(formData: FormData) {
 
   // Parse data rows after header
   const enrollments: Array<{
-    student_id: string;
-    course_id: string;
+    studentId: string;
+    courseId: string;
     term: string;
-    school_year: string;
+    schoolYear: string;
     grade: string | null;
-    status: string;
+    status: "passed" | "inc" | "drp" | "in_progress" | "failed";
   }> = [];
 
   const unmatchedCourses: string[] = [];
@@ -133,13 +125,15 @@ export async function uploadTranscript(formData: FormData) {
       continue;
     }
 
+    const status = gradeToStatus(grade) as "passed" | "inc" | "drp" | "in_progress" | "failed";
+
     enrollments.push({
-      student_id: student.id,
-      course_id: courseId,
+      studentId,
+      courseId,
       term,
-      school_year,
+      schoolYear: school_year,
       grade: grade || null,
-      status: gradeToStatus(grade),
+      status,
     });
   }
 
@@ -152,23 +146,16 @@ export async function uploadTranscript(formData: FormData) {
     };
   }
 
-  // Delete existing enrollments for the student
-  const { error: deleteError } = await supabase
-    .from("enrollments")
-    .delete()
-    .eq("student_id", student.id);
-
-  if (deleteError) {
-    return { success: false as const, error: `Failed to clear existing enrollments: ${deleteError.message}` };
-  }
-
-  // Insert new enrollments
-  const { error: insertError } = await supabase
-    .from("enrollments")
-    .insert(enrollments);
-
-  if (insertError) {
-    return { success: false as const, error: `Failed to insert enrollments: ${insertError.message}` };
+  // Delete existing enrollments and insert new ones within a single auth-aware transaction
+  try {
+    await withAuth(async (tx) => {
+      await tx
+        .delete(schema.enrollments)
+        .where(eq(schema.enrollments.studentId, studentId));
+      await tx.insert(schema.enrollments).values(enrollments);
+    });
+  } catch (e) {
+    return { success: false as const, error: `Failed to upload transcript: ${String(e)}` };
   }
 
   updateTag("enrollments");
