@@ -11,6 +11,7 @@ import { TopBar } from "@/components/layout/top-bar";
 import { Toaster } from "@/components/ui/sonner";
 import { CommandPalette } from "@/components/layout/command-palette";
 import { BottomNav } from "@/components/layout/bottom-nav";
+import { SidekickGate } from "@/components/agent/sidekick-gate";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -68,6 +69,9 @@ export default function RootLayout({
             </SidebarProvider>
           </TooltipProvider>
           <Toaster />
+          <Suspense fallback={null}>
+            <SidekickGate />
+          </Suspense>
           <CommandPalette />
           <Suspense fallback={null}>
             <BottomNav />

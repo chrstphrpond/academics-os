@@ -9,6 +9,7 @@ import {
   Bell,
   BookOpen,
   CheckSquare,
+  Sparkles,
 } from "lucide-react";
 import {
   CommandDialog,
@@ -48,6 +49,17 @@ export function CommandPalette() {
       <CommandInput placeholder="Search pages or ask a question..." />
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
+        <CommandGroup heading="Actions">
+          <CommandItem
+            onSelect={() => {
+              window.dispatchEvent(new CustomEvent("open-sidekick"));
+              setOpen(false);
+            }}
+          >
+            <Sparkles className="mr-2 h-4 w-4" />
+            Open Sidekick
+          </CommandItem>
+        </CommandGroup>
         <CommandGroup heading="Pages">
           {pages.map((page) => (
             <CommandItem
