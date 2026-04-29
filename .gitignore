@@ -49,3 +49,4 @@ next-env.d.ts
 screenshots/
 .superpowers/
 design-system/
+.env*.local

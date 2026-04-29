@@ -6,24 +6,11 @@ export interface CalendarEvent {
 }
 
 export const academicCalendar: CalendarEvent[] = [
-  // Term 3 SY 2025-26
-  { title: "Start of Classes", date: "2026-03-23", type: "event" },
-  { title: "Last Day of Late Enrollment", date: "2026-03-29", type: "deadline" },
-  { title: "Last Day for Cancellation (with refund)", date: "2026-04-04", type: "deadline" },
-  { title: "Start of First Academic Week", date: "2026-04-06", type: "event" },
-  { title: "Post-Enrollment System Clean-up", date: "2026-04-13", type: "event" },
-  { title: "Last Day for Shifting Program", date: "2026-05-18", type: "deadline" },
-  { title: "Student Webinar", date: "2026-05-22", type: "event" },
-  { title: "Last Day to Complete Courses", date: "2026-05-29", type: "deadline" },
-  { title: "Last Day for Dropping Courses", date: "2026-06-01", type: "deadline" },
-  { title: "Last Day for Cancellation (no refund)", date: "2026-06-01", type: "deadline" },
-  { title: "Last Day of Regular Classes", date: "2026-06-22", type: "event" },
-  { title: "Submission of Final Outputs", date: "2026-06-22", type: "deadline" },
-  { title: "Viewing of Final Grades", date: "2026-07-03", type: "event" },
-  // Term 1 SY 2026-27
-  { title: "Course Enlistment & Sectioning", date: "2026-08-10", type: "enrollment" },
-  { title: "Enrollment & Payment", date: "2026-08-17", type: "enrollment" },
-  { title: "Start of Classes (Term 1)", date: "2026-08-24", type: "event" },
+  // Term 3 SY 2025-26 (per MyCamu portal)
+  { title: "Start of Classes (Term 3)", date: "2026-04-17", type: "event" },
+  { title: "Last Day for Enrollment", date: "2026-04-30", type: "deadline" },
+  { title: "Last Day for Dropping Courses", date: "2026-04-30", type: "deadline" },
+  { title: "End of Classes (Term 3)", date: "2026-07-29", type: "event" },
 ];
 
 const typeColors: Record<string, string> = {

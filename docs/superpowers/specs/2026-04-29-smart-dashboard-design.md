@@ -39,8 +39,9 @@ The runtime layer is shaped so it can later be lifted into Vercel Workflow DevKi
 - Next.js 16 (App Router), React 19, TypeScript 5
 - Tailwind CSS v4 + shadcn/ui (existing) + a new `lib/ui/primitives` layer for Linear-style defaults
 - AI SDK 6 (`ai`, `@ai-sdk/react`) — provider-agnostic surface; provider implementation is Vertex Node SDK
-- `@clerk/nextjs` for auth; Supabase as Clerk Third-Party Auth provider
-- Supabase Postgres with `pgvector` + RLS
+- `@clerk/nextjs` for auth
+- **Neon Postgres** (via Vercel Marketplace) with `pgvector` + RLS; `@neondatabase/serverless` driver
+- **Drizzle ORM** (`drizzle-orm`, `drizzle-kit`) for schema, migrations, and typed queries
 - Vercel Blob (private) for audio + uploads
 - Vercel Cron for scheduled agent runs
 - Upstash Redis (via Vercel Marketplace) for rate limiting + session-scoped state
@@ -64,18 +65,22 @@ The runtime layer is shaped so it can later be lifted into Vercel Workflow DevKi
 - **Charts:** Recharts restyled monochrome with single accent; sparklines (no axes) inline in tables via tiny custom SVG.
 - **Navigation:** keep left sidebar; add a persistent top command bar with `⌘K` hint, current term/week, and a docked sidekick toggle on the right.
 
-## 5. Auth (Clerk + Supabase RLS)
+## 5. Auth (Clerk + Neon RLS)
 
 - Install `@clerk/nextjs`, wrap root layout in `<ClerkProvider>`, register Clerk middleware.
-- Configure Supabase as a **Clerk Third-Party Auth integration** (Clerk's own helper) so Supabase JWT validation accepts Clerk tokens.
 - Add `students.clerk_user_id TEXT UNIQUE`. Backfill the existing student row to your Clerk user. Drop the hardcoded `roll_number = '2024370558'` lookups.
-- RLS on every user-scoped table: `student_id IN (SELECT id FROM students WHERE clerk_user_id = auth.jwt()->>'sub')`.
-- Tables that get RLS: `enrollments`, `tasks`, `alerts`, `agent_actions`, `agent_runs`, `study_sessions`, `voice_notes`, `agent_conversations`, `emails`. Reference tables (`courses`, `course_offerings`, `knowledge_chunks`) stay world-readable.
-- Server Actions read the Clerk session via `auth()` from `@clerk/nextjs/server`; Supabase client is created with the Clerk-issued JWT so RLS evaluates as the user.
+- RLS pattern (Neon-native): every server request opens a connection-scoped transaction that runs `SET LOCAL app.clerk_user_id = '<id>'` from `auth().userId`, then executes queries. RLS policies reference `current_setting('app.clerk_user_id', true)` to filter rows.
+- Helper SQL function `current_student_id()` returns the `students.id` matching the current Clerk user; policies call it instead of repeating the join.
+- A `withAuth(query)` wrapper in `src/lib/db/auth.ts` does the transaction + `SET LOCAL` boilerplate so call sites stay clean.
+- Tables that get RLS: `enrollments`, `tasks`, `alerts`, `agent_actions`, `agent_runs`, `agent_conversations`, `agent_messages`, `study_sessions`, `voice_notes`, `emails`. Reference tables (`courses`, `course_offerings`, `knowledge_chunks`, `scholarships`) stay readable to any authenticated request.
 
-## 6. Data Model Additions
+## 6. Data Model
 
-Schema changes are purely additive in Phase 0; destructive cleanup deferred to Phase 10.
+The schema is defined in Drizzle (`src/lib/db/schema.ts`); migrations are generated via `drizzle-kit` and applied to Neon. Phase 0 ports the existing Supabase tables to Drizzle (one-shot migration against a fresh Neon database) and adds the new tables in the same migration. There is no Supabase-to-Neon data migration: the dev branch is reseeded from CSVs.
+
+**Existing tables (ported to Drizzle):**
+
+- `students`, `courses`, `enrollments`, `alerts`, `knowledge_chunks`, `tasks` — same columns as Supabase migration `00002_create_tables.sql`, plus the additions below.
 
 **New tables:**
 
@@ -293,7 +298,7 @@ First six tools shipped with sidekick:
 ## 12. Testing & Evals
 
 - **Unit (Vitest):** `gpa.ts`, `path-calculator.ts`, planner constraint solver, every tool input schema, every tool `execute()` with mocked Vertex.
-- **Integration:** Server Actions + Tools against a real local Supabase via `pnpm supabase start`.
+- **Integration:** Server Actions + Tools against a Neon dev branch (preferred) or a local Postgres + pgvector container; `drizzle-kit push` resets schema between runs.
 - **E2E (Playwright via MCP):** three golden flows
   1. Sidekick → ask question → approve tool call → see audit log entry
   2. Run planner end-to-end → lock in a plan → tasks created
@@ -308,7 +313,7 @@ First six tools shipped with sidekick:
 - Secrets via `vercel env`:
   - `CLERK_SECRET_KEY`, `CLERK_PUBLISHABLE_KEY`
   - `GOOGLE_PROJECT_ID`, `GOOGLE_LOCATION`, `GOOGLE_WORKLOAD_IDENTITY_PROVIDER`, `GOOGLE_SERVICE_ACCOUNT_EMAIL`
-  - `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY`
+  - `DATABASE_URL` (Neon pooled connection), `DATABASE_URL_UNPOOLED` (Neon direct, for migrations)
   - `BLOB_READ_WRITE_TOKEN`
   - `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`
   - `SENTRY_DSN`, `SENTRY_AUTH_TOKEN`

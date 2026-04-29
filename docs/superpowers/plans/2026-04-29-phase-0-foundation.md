@@ -1,5 +1,7 @@
 # Phase 0 — Foundation Implementation Plan
 
+> **PIVOT NOTE (2026-04-29):** Phase 0 was retargeted from Supabase to **Neon Postgres + Drizzle ORM**. Tasks 3–9 were replaced with the "Pivot 3a/b/c/d/e + Pivot 5" task series tracked in TodoWrite. The visual/AI/audit/admin/UI tasks (14–20 of the original numbering) are unchanged in intent; just substitute "Drizzle" wherever the original prose said "Supabase". The original plan body below is retained for code-skeleton reference but the canonical task list is in TodoWrite.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Land the foundation for the smart-dashboard redesign — Clerk auth, Supabase RLS via Clerk Third-Party Auth, Vertex AI runtime with a working hello-world round-trip, audit-log infrastructure, feature-flag plumbing, and a refreshed Linear/Vercel-style visual base — so every subsequent phase can ship features without revisiting plumbing.
