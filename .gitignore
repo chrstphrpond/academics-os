@@ -58,3 +58,4 @@ screenshots/
 .superpowers/
 design-system/
 .env*.local
+.claude/
