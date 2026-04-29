@@ -1,5 +1,7 @@
 import { Suspense } from "react";
 import { isFlagEnabled } from "@/lib/feature-flags";
+import { BriefingHero } from "@/components/briefing/briefing-hero";
+import { BriefingSkeleton } from "@/components/briefing/briefing-skeleton";
 import { schema } from "@/lib/db";
 import { withAuth, getCurrentStudentId } from "@/lib/db/auth";
 import { eq, desc, and } from "drizzle-orm";
@@ -114,17 +116,28 @@ async function DashboardContent() {
 }
 
 export default async function DashboardPage() {
-  const v2 = await isFlagEnabled("dashboard.v2");
+  const [v2, briefingOn] = await Promise.all([
+    isFlagEnabled("dashboard.v2"),
+    isFlagEnabled("feature.briefing"),
+  ]);
 
   if (v2) {
     return (
-      <div className="space-y-4 p-6">
+      <div className="space-y-6 p-6">
+        {briefingOn ? (
+          <Suspense fallback={<BriefingSkeleton />}>
+            <BriefingHero />
+          </Suspense>
+        ) : (
+          <div className="rounded-md border border-dashed border-border p-4 text-sm text-muted-foreground">
+            Enable <code>feature.briefing</code> to see the daily briefing.
+          </div>
+        )}
         <h1 className="text-xl font-semibold tracking-tight">
           Dashboard v2 (foundation only)
         </h1>
         <p className="text-sm text-muted-foreground">
-          Briefing, sidekick, and agentic features land in subsequent phases.
-          Toggle the cookie off to return to the v1 dashboard.
+          Sidekick and the rest land in subsequent phases.
         </p>
       </div>
     );
