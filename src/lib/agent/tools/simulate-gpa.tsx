@@ -3,6 +3,10 @@ import { eq } from "drizzle-orm";
 import { schema } from "@/lib/db";
 import { withExplicitAuth } from "@/lib/db/auth";
 import { calculateGpa } from "@/lib/gpa";
+import {
+  listScholarshipBands,
+  bandStatusFor,
+} from "@/lib/simulator/scholarships";
 import { registerTool } from "./registry";
 import type { ToolDefinition, ToolRenderProps } from "./types";
 
@@ -69,6 +73,14 @@ export const simulateGpaTool: ToolDefinition<Input, Output> = {
             ? `Target ${input.target.toFixed(2)} met (margin ${gap.toFixed(2)}).`
             : `Target ${input.target.toFixed(2)} short by ${Math.abs(gap).toFixed(2)}.`
         );
+      }
+      // Surface scholarship band membership so the model can call them out.
+      const bands = await listScholarshipBands();
+      const status = bandStatusFor(simulated.gpa, bands);
+      for (const s of status) {
+        if (s.inBand) {
+          notes.push(`In ${s.band.name} (${s.band.minGpa}–${s.band.maxGpa}).`);
+        }
       }
       return {
         output: {
