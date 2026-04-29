@@ -1,8 +1,18 @@
+"use client";
+
 import type { AgentToolProposal } from "@/lib/briefing/schema";
+import { ToolRenderer } from "@/components/agent/tool-renderer";
+
+const READONLY_TOOLS = new Set([
+  "searchKnowledge",
+  "simulateGpa",
+  "proposePlan",
+]);
 
 /**
- * Phase 1 renders proposed actions as inert cards.
- * Phase 2 wires Approve/Edit/Cancel through the ToolCard system.
+ * Phase 1 rendered these as inert cards.
+ * Phase 2 wires them through ToolRenderer so each Approve actually runs the
+ * registered server-side tool, with full audit + undo.
  */
 export function CtaActions({ actions }: { actions: AgentToolProposal[] }) {
   if (actions.length === 0) return null;
@@ -13,17 +23,17 @@ export function CtaActions({ actions }: { actions: AgentToolProposal[] }) {
       </h3>
       <ul className="space-y-2">
         {actions.map((a, i) => (
-          <li
-            key={i}
-            className="rounded-md border border-border/60 bg-card px-3 py-2 text-sm"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <span className="font-mono text-xs text-muted-foreground">{a.tool}</span>
-              <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                proposed
-              </span>
-            </div>
-            <p className="mt-1 text-foreground/85">{a.rationale}</p>
+          <li key={i}>
+            <ToolRenderer
+              tool={a.tool}
+              toolLabel={a.tool}
+              input={a.args}
+              requiresConfirmation
+              readOnly={READONLY_TOOLS.has(a.tool)}
+              renderBody={() => (
+                <p className="text-foreground/85">{a.rationale}</p>
+              )}
+            />
           </li>
         ))}
       </ul>
