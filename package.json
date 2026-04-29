@@ -15,6 +15,7 @@
     "db:push": "dotenv -e .env.local -- drizzle-kit push",
     "db:studio": "dotenv -e .env.local -- drizzle-kit studio",
     "db:prep": "dotenv -e .env.local -- tsx scripts/db-prep.ts",
+    "backfill:clerk": "dotenv -e .env.local -- tsx scripts/backfill-clerk-user-id.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },
