@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rm /c/Developer/academics-os/.git/index.lock)",
+      "Bash(git commit -m ' *)"
+    ]
+  }
+}

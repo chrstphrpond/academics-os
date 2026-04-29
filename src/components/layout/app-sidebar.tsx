@@ -9,7 +9,7 @@ import { UserButton } from "@clerk/nextjs";
 import type { LucideIcon } from "lucide-react";
 
 export function AppSidebar() {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
 
   return (
     <aside className="hidden h-svh flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground md:flex md:w-12 lg:w-60">
