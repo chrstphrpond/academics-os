@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { isFlagEnabled } from "@/lib/feature-flags";
 import { db, schema, getCurrentStudentIdLegacy } from "@/lib/db";
 import { eq, desc, and } from "drizzle-orm";
 import { calculateGpa } from "@/lib/gpa";
@@ -96,7 +97,24 @@ async function DashboardContent() {
   );
 }
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const v2 = await isFlagEnabled("dashboard.v2");
+
+  if (v2) {
+    return (
+      <div className="space-y-4 p-6">
+        <h1 className="text-xl font-semibold tracking-tight">
+          Dashboard v2 (foundation only)
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          Briefing, sidekick, and agentic features land in subsequent phases.
+          Toggle the cookie off to return to the v1 dashboard.
+        </p>
+      </div>
+    );
+  }
+
+  // Existing v1 body — keep verbatim
   return (
     <div className="space-y-6">
       <DashboardHeader />
