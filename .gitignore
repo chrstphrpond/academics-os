@@ -61,3 +61,9 @@ design-system/
 .claude/
 dashboard-*.png
 screenshots/
+# Playwright/dev screenshots dropped at repo root
+*-mcp.png
+atlas-*.png
+e2e-*.png
+sidebar-*.png
+p3-*.png

@@ -4,19 +4,18 @@ import { PageHeader } from "@/components/ui/animated";
 
 export default function KnowledgePage() {
   return (
-    <div className="space-y-8">
+    <div className="mx-auto flex max-w-4xl flex-col gap-8">
       <PageHeader
-        title="Knowledge Base"
-        description="Ask questions or browse FAQ categories"
+        title="Atlas"
+        description="Your academic copilot — ask about courses, GPA, policies, or anything else."
       />
 
-      <section>
-        <h2 className="mb-3 text-lg font-semibold">AI Q&amp;A</h2>
-        <ChatInterface />
-      </section>
+      <ChatInterface />
 
       <section>
-        <h2 className="mb-3 text-lg font-semibold">Browse by Category</h2>
+        <h2 className="mb-3 text-sm font-medium text-muted-foreground">
+          Browse the handbook
+        </h2>
         <CategoryGrid />
       </section>
     </div>

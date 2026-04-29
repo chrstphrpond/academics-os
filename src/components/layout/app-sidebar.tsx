@@ -2,11 +2,28 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import * as Icons from "lucide-react";
+import {
+  LayoutDashboard,
+  Map,
+  GraduationCap,
+  Bell,
+  BookOpen,
+  CheckSquare,
+  Square,
+  type LucideIcon,
+} from "lucide-react";
 import { NAV_ITEMS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { UserButton } from "@clerk/nextjs";
-import type { LucideIcon } from "lucide-react";
+
+const ICONS: Record<string, LucideIcon> = {
+  LayoutDashboard,
+  Map,
+  GraduationCap,
+  Bell,
+  BookOpen,
+  CheckSquare,
+};
 
 export function AppSidebar() {
   const pathname = usePathname() ?? "";
@@ -28,9 +45,7 @@ export function AppSidebar() {
             item.href === "/"
               ? pathname === "/"
               : pathname.startsWith(item.href);
-          const Icon =
-            (Icons as unknown as Record<string, LucideIcon>)[item.icon] ??
-            Icons.Square;
+          const Icon = ICONS[item.icon] ?? Square;
 
           return (
             <Link

@@ -1,57 +1,38 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
+import {
+  DefaultChatTransport,
+  isToolUIPart,
+  getToolName,
+} from "ai";
 import { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import {
-  Bot,
-  Send,
-  User,
-  Sparkles,
-} from "lucide-react";
+import { ShiningText } from "@/components/ui/shining-text";
+import { ToolRenderer } from "@/components/agent/tool-renderer";
+import { Bot, Send, User, Sparkles } from "lucide-react";
 
 const SUGGESTED_QUESTIONS = [
+  "What's my current GWA and scholarship band?",
   "How do I complete my INC grade?",
   "What are the payment channels?",
   "How do I drop a course?",
   "What is the grading system?",
   "How do I request a transcript?",
-  "What are the enrollment requirements?",
 ];
 
-function TypingDots() {
-  return (
-    <span className="inline-flex items-center gap-1.5">
-      {[0, 1, 2].map((i) => (
-        <motion.span
-          key={i}
-          className="size-1.5 rounded-full bg-primary/80"
-          animate={{
-            opacity: [0.3, 1, 0.3],
-            scale: [0.8, 1.1, 0.8],
-          }}
-          transition={{
-            duration: 1.2,
-            repeat: Infinity,
-            delay: i * 0.2,
-            ease: "easeInOut",
-          }}
-          style={{
-            boxShadow: "0 0 6px 1px oklch(0.541 0.24 264.376 / 0.4)",
-          }}
-        />
-      ))}
-    </span>
-  );
-}
+const READONLY_TOOLS = new Set([
+  "searchKnowledge",
+  "simulateGpa",
+  "proposePlan",
+]);
 
 export function ChatInterface() {
   const { messages, sendMessage, status } = useChat({
-    transport: new DefaultChatTransport({ api: "/api/chat" }),
+    transport: new DefaultChatTransport({ api: "/api/agent/chat" }),
   });
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -72,19 +53,15 @@ export function ChatInterface() {
   }
 
   return (
-    <div className="relative flex h-[480px] flex-col overflow-hidden rounded-2xl">
-      {/* Animated background blobs */}
+    <div className="relative flex h-[calc(100dvh-22rem)] min-h-[480px] flex-col overflow-hidden rounded-2xl">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute -top-24 -left-24 h-64 w-64 rounded-full bg-violet-500/[0.07] blur-3xl animate-pulse" />
         <div className="absolute -bottom-24 -right-24 h-64 w-64 rounded-full bg-indigo-500/[0.07] blur-3xl animate-pulse [animation-delay:1s]" />
       </div>
 
-      {/* Glassmorphic container */}
       <div className="relative flex h-full flex-col rounded-2xl border border-white/[0.05] bg-white/[0.02] backdrop-blur-2xl">
-        {/* Header gradient line */}
         <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
 
-        {/* Messages area */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4">
           {messages.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center gap-4">
@@ -97,17 +74,14 @@ export function ChatInterface() {
               >
                 <Sparkles className="size-6 text-primary" />
               </motion.div>
-              <motion.div
+              <motion.p
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: 0.1 }}
-                className="text-center"
+                className="text-sm text-white/50"
               >
-                <p className="font-medium text-white/90">Ask anything about MMDC</p>
-                <p className="text-sm text-white/40 mt-1">
-                  Get answers from the student handbook and FAQs
-                </p>
-              </motion.div>
+                Try one of these to start
+              </motion.p>
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -148,15 +122,15 @@ export function ChatInterface() {
                     </div>
                   )}
                   <div
-                    className={`max-w-[75%] rounded-lg px-3 py-2 text-sm ${
+                    className={`max-w-[75%] space-y-2 rounded-lg px-3 py-2 text-sm ${
                       message.role === "user"
                         ? "bg-white/[0.05] text-white/90 ring-1 ring-white/[0.08]"
                         : "border-l-2 border-primary/30 bg-white/[0.02] text-white/80"
                     }`}
                   >
-                    {message.parts.map((part, i) =>
-                      part.type === "text" ? (
-                        message.role === "user" ? (
+                    {message.parts.map((part, i) => {
+                      if (part.type === "text") {
+                        return message.role === "user" ? (
                           <span key={i} className="whitespace-pre-wrap">
                             {part.text}
                           </span>
@@ -182,9 +156,32 @@ export function ChatInterface() {
                           >
                             {part.text}
                           </ReactMarkdown>
-                        )
-                      ) : null
-                    )}
+                        );
+                      }
+                      if (isToolUIPart(part)) {
+                        const toolName = getToolName(part);
+                        // Read-only tools auto-execute server-side; the model
+                        // already inlined their results into the text answer,
+                        // so we hide the card to keep the chat clean.
+                        if (READONLY_TOOLS.has(toolName)) return null;
+                        return (
+                          <ToolRenderer
+                            key={i}
+                            tool={toolName}
+                            toolLabel={toolName}
+                            input={(part as { input?: unknown }).input ?? {}}
+                            requiresConfirmation
+                            readOnly={false}
+                            renderBody={({ input: toolInput }) => (
+                              <pre className="whitespace-pre-wrap break-words text-xs text-muted-foreground">
+                                {JSON.stringify(toolInput, null, 2)}
+                              </pre>
+                            )}
+                          />
+                        );
+                      }
+                      return null;
+                    })}
                   </div>
                   {message.role === "user" && (
                     <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white/[0.06] ring-1 ring-white/[0.08]">
@@ -195,26 +192,23 @@ export function ChatInterface() {
               ))}
             </AnimatePresence>
           )}
-          {isLoading &&
-            (messages.length === 0 ||
-              messages[messages.length - 1]?.role === "user") && (
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex gap-3"
-              >
-                <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 ring-1 ring-primary/20">
-                  <Bot className="size-4 text-primary" />
-                </div>
-                <div className="rounded-lg border-l-2 border-primary/30 bg-white/[0.02] px-3 py-2.5">
-                  <TypingDots />
-                </div>
-              </motion.div>
-            )}
+          {isLoading && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex gap-3"
+            >
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 ring-1 ring-primary/20">
+                <Bot className="size-4 text-primary" />
+              </div>
+              <div className="rounded-lg border-l-2 border-primary/30 bg-white/[0.02] px-3 py-2.5">
+                <ShiningText text="Atlas is thinking…" />
+              </div>
+            </motion.div>
+          )}
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input area */}
         <div className="border-t border-white/[0.06] p-3">
           <form
             onSubmit={(e) => {
@@ -232,7 +226,7 @@ export function ChatInterface() {
                   handleSend(input);
                 }
               }}
-              placeholder="Ask about courses, enrollment, grades..."
+              placeholder="Ask Atlas about courses, GPA, policies…"
               disabled={isLoading}
               rows={1}
               className="flex-1 resize-none bg-transparent py-2 text-sm text-white/90 placeholder:text-white/20 focus:outline-none disabled:opacity-40"

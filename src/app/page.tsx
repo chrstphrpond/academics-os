@@ -137,7 +137,7 @@ export default async function DashboardPage() {
           Dashboard v2 (foundation only)
         </h1>
         <p className="text-sm text-muted-foreground">
-          Sidekick and the rest land in subsequent phases.
+          Atlas and the rest land in subsequent phases.
         </p>
       </div>
     );

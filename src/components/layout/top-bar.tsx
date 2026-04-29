@@ -1,7 +1,6 @@
 "use client";
 
-import { Sparkles, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Search } from "lucide-react";
 import { Kbd } from "@/components/ui/kbd";
 
 export function TopBar() {
@@ -23,18 +22,6 @@ export function TopBar() {
           <Kbd>⌘K</Kbd>
         </span>
       </button>
-
-      <Button
-        size="sm"
-        variant="ghost"
-        className="gap-1.5 text-xs"
-        onClick={() => {
-          window.dispatchEvent(new CustomEvent("open-sidekick"));
-        }}
-      >
-        <Sparkles className="h-3.5 w-3.5" />
-        Sidekick
-      </Button>
     </header>
   );
 }

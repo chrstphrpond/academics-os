@@ -52,12 +52,12 @@ export function CommandPalette() {
         <CommandGroup heading="Actions">
           <CommandItem
             onSelect={() => {
-              window.dispatchEvent(new CustomEvent("open-sidekick"));
+              router.push("/knowledge");
               setOpen(false);
             }}
           >
             <Sparkles className="mr-2 h-4 w-4" />
-            Open Sidekick
+            Ask Atlas
           </CommandItem>
         </CommandGroup>
         <CommandGroup heading="Pages">
